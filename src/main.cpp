@@ -1,9 +1,9 @@
 
-
-void setup() {
-
+void setup(void) {
+  
 }
 
-void loop() {
-  
+
+void loop(void) {
+
 }
