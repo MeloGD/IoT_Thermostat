@@ -1,13 +1,8 @@
 #include "display.cpp"
 #include "lvgl.h"
 #include "ui.h"
-#include "ft6236.h"
-
 
 Display display;
-#define SDA_FT6236 38
-#define SCL_FT6236 39
-FT6236 ts = FT6236();
 
 /*Change to your screen resolution*/
 static const uint32_t screenWidth  = 480;
@@ -24,7 +19,6 @@ void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *colo
   display.startWrite();
   display.setAddrWindow( area->x1, area->y1, w, h );
   //tft.pushColors( ( uint16_t * )&color_p->full, w * h, true );
-  //probar con pushPixels
   display.writePixels((lgfx::rgb565_t *)&color_p->full, w * h);
   display.endWrite();
 
@@ -33,29 +27,34 @@ void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *colo
 
 /*Read the touchpad*/
 void my_touchpad_read( lv_indev_drv_t * indev_driver, lv_indev_data_t * data ) {
-  if(ts.touched()){
-    data->state = LV_INDEV_STATE_PR;
-    TS_Point p = ts.getPoint();
-    data->point.x = p.y;
-    data->point.y = display.height() - p.x;
-    Serial.printf("x-%d,y-%d\n", data->point.x, data->point.y);
-  } else {
+  uint16_t touchX = 0, touchY = 0;
+  bool touched = false;//tft.getTouch( &touchX, &touchY, 600 );
+  display.getTouch( &touchX, &touchY, 600 );
+  if( !touched ) {
     data->state = LV_INDEV_STATE_REL;
-  } 
+  } else {
+    data->state = LV_INDEV_STATE_PR;
+
+    /*Set the coordinates*/
+    data->point.x = touchX;
+    data->point.y = touchY;
+
+    Serial.print( "Data x " );
+    Serial.println( touchX );
+
+    Serial.print( "Data y " );
+    Serial.println( touchY );
+  }
 }
 
 void setup(void) {
   Serial.begin(115200);
-  
+
   display.begin();        
   display.setRotation(1);
   display.setBrightness(255);
-  //uint16_t calData[] = { 25, 53, 0, 458, 319, 19, 319, 441 };
-  //display.setTouchCalibrate( calData );
-
-  if(!ts.begin(10, SDA_FT6236, SCL_FT6236)){
-     Serial.println("Unable to start the capacitive touch Screen.");
-  }
+  uint16_t calData[] = { 25, 53, 0, 458, 319, 19, 319, 441 };
+  display.setTouchCalibrate( calData );
   lv_init();
   lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * 10 );
    
@@ -77,15 +76,13 @@ void setup(void) {
   indev_drv.read_cb = my_touchpad_read;
   lv_indev_drv_register(&indev_drv);
 
-  
   ui_init();
-  
   Serial.println( "Setup done" );
 }
 
 void loop() {
-  lv_timer_handler(); /* let the GUI do its work */
-  delay(5);
+    lv_timer_handler(); /* let the GUI do its work */
+    delay(5);
 }
 
 

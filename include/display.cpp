@@ -10,8 +10,6 @@ class Display : public lgfx::LGFX_Device {
   lgfx::Bus_SPI           _bus_instance;  
 // Control de brillo de la LCD
   lgfx::Light_PWM         _light_instance;
-// Control del panel táctil, en este caso, FT6236
-  lgfx::Touch_FT5x06      _touch_instance; 
 
   public:
     Display(void) {
@@ -50,26 +48,6 @@ class Display : public lgfx::LGFX_Device {
         cfg.bus_shared       = true;   // True, el bus está compartido con la SD -> PREGUNTAR A JONAY, POR SI ACASO
         // Carga la configuración para preparar el panel LCD
         _panel_instance.config(cfg);
-      }
-      // Configuración de panel táctil
-      { 
-        auto cfg            = _touch_instance.config();
-        cfg.x_min           = 0;    
-        cfg.x_max           = 319;  
-        cfg.y_min           = 0;    
-        cfg.y_max           = 479;  
-        cfg.pin_int         = 40;   // GPIO al cual está conectado el panel
-        cfg.bus_shared      = false; 
-        cfg.offset_rotation = 0;// 表示とタッチの向きのが一致しない場合の調整 0~7の値で設定
-        // Configuración del panel conectado a I2C
-        cfg.i2c_port        = 1;      
-        cfg.i2c_addr        = 0x38;   
-        cfg.pin_sda         = 38;     
-        cfg.pin_scl         = 39;     
-        cfg.freq            = 400000;     
-        // Carga la configuración para preparar el panel táctil
-        _touch_instance.config(cfg);
-        _panel_instance.setTouch(&_touch_instance); 
       }
       // Configuración del control de brillo de la LCD
       {
