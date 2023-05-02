@@ -3,7 +3,7 @@
 // LVGL version: 8.3.4
 // Project name: SquareLine_Project
 
-#include "ui_helpers.h"
+#include "UI/ui_helpers.h"
 
 void _ui_bar_set_property( lv_obj_t *target, int id, int val) 
 {

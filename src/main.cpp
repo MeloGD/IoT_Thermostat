@@ -1,19 +1,26 @@
-#include "display.cpp"
+#include <Drivers/display.cpp>
 #include "lvgl.h"
-#include "ui.h"
-#include "ft6236.h"
-
+#include "UI/ui.h"
+#include "Drivers/ft6236.h"
 
 Display display;
+
 #define SDA_FT6236 38
 #define SCL_FT6236 39
 FT6236 ts = FT6236();
 
 /*Change to your screen resolution*/
+// probar cambiar u32 a u16
 static const uint32_t screenWidth  = 480;
 static const uint32_t screenHeight = 320;
 static lv_disp_draw_buf_t draw_buf;
-static lv_color_t buf[ screenWidth * 10 ];
+// Tamaño del buffer original, mucho más pequeño
+// Si veo que la RAM se llena demasiado, utilizar este
+// static lv_color_t buf[ screenWidth * 10 ];
+// Dividimos entre 2, porque la librería está escrita con u32s
+// y con esto dimensionamos la memoria del buffer de u32s a u16s
+// Ojo que tengo que actualizar esto abajo también --> lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * screenHeight / 2  );
+static lv_color_t buf[ screenWidth * screenHeight / 2 ];
 
 
 /* Display flushing */
@@ -32,6 +39,7 @@ void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *colo
 }
 
 /*Read the touchpad*/
+// FT6236
 void my_touchpad_read( lv_indev_drv_t * indev_driver, lv_indev_data_t * data ) {
   if(ts.touched()){
     data->state = LV_INDEV_STATE_PR;
@@ -44,20 +52,49 @@ void my_touchpad_read( lv_indev_drv_t * indev_driver, lv_indev_data_t * data ) {
   } 
 }
 
+// Task timer
+TaskHandle_t updateBrightnessTaskHandler = NULL;
+
+// functions
+int last_state = HIGH;
+int current_state;
+
+static void updateScreenBrightnessTask(void *pv_parameters) {
+  //TickType_t xlast_wake_time;
+  //const TickType_t xfrecuency = 140;
+  //xlast_wake_time = xTaskGetTickCount();
+  while (1) {
+    //vTaskDelayUntil(&xlast_wake_time, xfrecuency);
+    current_state = digitalRead(16);
+    //Serial.print("task ready");
+    if (last_state == HIGH && current_state == LOW ) {
+      display.setBrightness(0);
+      last_state = LOW;
+      Serial.print("last_state = low");
+    } else if (last_state == LOW && current_state == LOW) {
+      display.setBrightness(255);
+      last_state = HIGH;
+      Serial.print("last_state = high");
+    }
+    vTaskDelay(140/portTICK_RATE_MS);
+  }
+}
+
+// setup y main
 void setup(void) {
   Serial.begin(115200);
   
   display.begin();        
   display.setRotation(1);
   display.setBrightness(255);
-  //uint16_t calData[] = { 25, 53, 0, 458, 319, 19, 319, 441 };
-  //display.setTouchCalibrate( calData );
 
-  if(!ts.begin(10, SDA_FT6236, SCL_FT6236)){
-     Serial.println("Unable to start the capacitive touch Screen.");
+  
+  if(!ts.begin(5, SDA_FT6236, SCL_FT6236)){
+    Serial.println("Unable to start the capacitive touch Screen.");
   }
+  
   lv_init();
-  lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * 10 );
+  lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * screenHeight / 2  );
    
   /*Initialize the display*/
   static lv_disp_drv_t disp_drv;
@@ -77,8 +114,11 @@ void setup(void) {
   indev_drv.read_cb = my_touchpad_read;
   lv_indev_drv_register(&indev_drv);
 
-  
   ui_init();
+  
+  // Brightness button
+  pinMode(16, INPUT_PULLUP);
+  xTaskCreate(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,1,&updateBrightnessTaskHandler);
   
   Serial.println( "Setup done" );
 }
@@ -87,6 +127,3 @@ void loop() {
   lv_timer_handler(); /* let the GUI do its work */
   delay(5);
 }
-
-
-

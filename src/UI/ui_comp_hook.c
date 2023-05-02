@@ -3,7 +3,7 @@
 // LVGL version: 8.3.4
 // Project name: SquareLine_Project
 
-#include "ui.h"
+#include "UI/ui.h"
 
 void ui_comp_Label1_create_hook( lv_obj_t * comp)
 {

@@ -7,7 +7,7 @@ class Display : public lgfx::LGFX_Device {
 // Tipo de panel LCD en uso ILI9488
   lgfx::Panel_ILI9488     _panel_instance;
 // Tipo de bus con el que se conecta la LCD
-  lgfx::Bus_SPI           _bus_instance;  
+  lgfx::Bus_SPI           _bus_instance;
 // Control de brillo de la LCD
   lgfx::Light_PWM         _light_instance;
 

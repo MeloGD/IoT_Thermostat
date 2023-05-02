@@ -4,9 +4,9 @@
 // Project name: SquareLine_Project
 
 
-#include "ui.h"
-#include "ui_helpers.h"
-#include "ui_comp.h"
+#include "UI/ui.h"
+#include "UI/ui_helpers.h"
+#include "UI/ui_comp.h"
 
 uint32_t LV_EVENT_GET_COMP_CHILD;
 

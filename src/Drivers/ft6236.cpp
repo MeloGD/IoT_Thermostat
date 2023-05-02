@@ -12,7 +12,7 @@ MIT license, all text above must be included in any redistribution
 */
 
 #include "Arduino.h"
-#include "FT6236.h"
+#include "Drivers/ft6236.h"
 #include <Wire.h>
 
 /* New class. */
