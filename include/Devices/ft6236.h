@@ -2,8 +2,8 @@
  * FT6236.h
  */
 
-#ifndef FT6236_H
-#define FT6236_H
+#ifndef FT6236_GUARD
+#define FT6236_GUARD
 
 #include "Arduino.h"
 #include <Wire.h>
@@ -31,6 +31,10 @@
 #define FT6236U_CHIPID 0x64 // FT6236U ID
 
 #define FT6236_DEFAULT_THRESHOLD 128 // Default threshold for touch detection
+
+#define SDA_FT6236 38
+#define SCL_FT6236 39
+
 
 class TS_Point
 {

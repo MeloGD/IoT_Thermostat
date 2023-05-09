@@ -1,3 +1,9 @@
 {
-    "C_Cpp.errorSquiggles": "enabled"
+    "C_Cpp.errorSquiggles": "enabled",
+    "files.associations": {
+        "ft6236.h": "c",
+        "display.h": "c",
+        "lovyangfx.hpp": "c",
+        "ui.h": "c"
+    }
 }

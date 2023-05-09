@@ -11,12 +11,13 @@ Written by Limor Fried/Ladyada for Adafruit Industries.
 MIT license, all text above must be included in any redistribution
 */
 
-#include "Arduino.h"
-#include "Drivers/ft6236.h"
-#include <Wire.h>
+#include "Devices/ft6236.h"
+//#include "Arduino.h"
+//#include <Wire.h>
 
 /* New class. */
 FT6236::FT6236() { touches = 0; }
+
 
 /* Start I2C and check if the FT6236 is found. */
 boolean FT6236::begin(uint8_t thresh, int8_t sda, int8_t scl)
