@@ -3,9 +3,9 @@
 
 
 
-static void updateScreenBrightnessTask(void *pv_parameters);
-static void updateWarmHideTemperature(void *pv_parameters) ;
-static void updateColdHideTemperature(void *pv_parameters) ;
+static void updateScreenBrightnessTask(void *args);
+static void writeSensorsDataUI(void *args) ;
+static void runClockUI(void *args) ;
 void createTasks(void);
 
 #endif

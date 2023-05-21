@@ -1,15 +1,21 @@
 #include "RTOS/tasks.h"
 #include "UI/mcu_ui.h"
 #include "Devices/sensor.h"
+#include "Devices/rtc.h"
 
 TaskHandle_t updateBrightnessTaskHandler = NULL;
-TaskHandle_t writeTempUITaskHandler = NULL;
+TaskHandle_t writeSensorsDataUITaskHandler = NULL;
+TaskHandle_t runClockUITaskHandler = NULL;
+TaskHandle_t lvglHandler = NULL;
 
-//
+// 
+static SemaphoreHandle_t mutex = NULL;
+static int lock;
+// Brightness control
 int last_state = HIGH;
 int current_state;
 
-static void updateScreenBrightnessTask(void *pv_parameters) {
+static void updateScreenBrightnessTask(void *args) {
   while (1) {
     current_state = digitalRead(16);
     if (last_state == HIGH && current_state == LOW ) {
@@ -26,44 +32,72 @@ static void updateScreenBrightnessTask(void *pv_parameters) {
   }
 }
 
-//
-SensorDS18B20 warm_hide_sensor(8);
-SensorDS18B20 cold_hide_sensor(8);
-
-static void writeTemperatureUI(void *args) {
+// Write temps/humidity UI
+static void writeSensorsDataUI(void *args) {
   float value;
-  char tempvalue[5];
+  char formatted_value[8];
+  prepareSensors();
   while (1) {
-    value = warm_hide_sensor.readTemp(0);
-    dtostrf(value,5,2,tempvalue);
-    lv_label_set_text(ui_warmtemp, tempvalue);
-    value = cold_hide_sensor.readTemp(1);
-    dtostrf(value,5,2,tempvalue);
-    lv_label_set_text(ui_coldtemp, tempvalue);
-    vTaskDelay(100/portTICK_RATE_MS);
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    // Primer sensor DS18B20 - Cueva caliente
+    dtostrf((double)readTemperatures(0) , 5 , 2 , formatted_value);
+    lv_label_set_text(ui_warmtemp, formatted_value);
+    // Segundo sensor DS18B20 - Cueva fría
+    dtostrf((double)readTemperatures(1) , 5 , 2 , formatted_value);
+    lv_label_set_text(ui_coldtemp , formatted_value);
+    // Primer sensor AM2301 - Cueva húmeda
+    dtostrf((double)readHumidHideTemp(), 5 , 2 , formatted_value);
+    lv_label_set_text(ui_environmenttemp , formatted_value);
+    dtostrf((double)readHumidHideHum(), 5 , 2 , formatted_value);
+    lv_label_set_text(ui_environmentrelativehum , formatted_value); 
+    // Segundo sensor AM2301 - Entorno
+    dtostrf((double)readEnvironmentTemp() , 5 , 2 , formatted_value);
+    lv_label_set_text(ui_moisttemp , formatted_value);
+    dtostrf((double)readEnvironmentHum() , 5 , 2 , formatted_value);
+    lv_label_set_text(ui_moistrelativehum , formatted_value);
+    //Serial.print("Sensors");
+    xSemaphoreGive(mutex);
+    
+    vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
 
+//
 
-static void  update1(void *args) {
+static void runClockUI(void *args) {
+  configRTC();
+  char rtc_time[8];
+  char format[] = "hh:mm";
   while (1) {
-    Serial.print("Update1");
-    vTaskDelay(100/portTICK_RATE_MS);
+    strcpy(rtc_time, format);
+    Serial.print("\nHora: ");
+    Serial.print(reportTime().hour());
+    Serial.print("\nMinutos: ");
+    Serial.print(reportTime().minute());
+    reportTime().toString(rtc_time);
+    
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    lv_label_set_text(ui_clock , rtc_time);
+    xSemaphoreGive(mutex);
+    
+    vTaskDelay(100 / portTICK_RATE_MS);
   }
-} 
-static void  update2(void *args) {
-  while (1) {
-    Serial.print("Update2");
-    vTaskDelay(100/portTICK_RATE_MS);
-  }
-} 
+}
 
+static void runUI (void *args) {
+  while (1) {
+    lv_timer_handler();
+    vTaskDelay(5 / portTICK_RATE_MS);
+  }
+  
+}
 
 // 1 funciona con 2, 1 funciona con 3, pero 2 con 3 no
 void createTasks(void) {
-  xTaskCreate(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,1,&updateBrightnessTaskHandler);
-  xTaskCreate(writeTemperatureUI,"UpdateWarhHideTemperatureTask",2048,NULL,2,&writeTempUITaskHandler);
-  //xTaskCreate(updateColdHideTemperature,"UpdateColdHideTemperatureTask",2048,NULL,3,&updateColdTempTaskHandler);
-  xTaskCreate(update1,"Update1",2048,NULL,2,&writeTempUITaskHandler);
-  xTaskCreate(update2,"Update2",2048,NULL,2,&writeTempUITaskHandler);
+  mutex = xSemaphoreCreateMutex();
+  xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
+  xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
+  xTaskCreatePinnedToCore(writeSensorsDataUI,"UpdateDataUITask",2048,NULL,3,&writeSensorsDataUITaskHandler,1);
+  xTaskCreatePinnedToCore(runClockUI,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
+  //vTaskStartScheduler();
 }

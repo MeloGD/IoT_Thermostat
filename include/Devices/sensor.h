@@ -2,29 +2,18 @@
 #define SENSOR_GUARD
 
 #include <DallasTemperature.h>
+#include <DHT.h>
 
-// generalizar la clase para que funcione con sensores de temperatura y con el sensor de luz
-class TempSensor {
-  protected:
-    float temperature_;
-    float humidity_;
-  public:
-};
+#define DHT_PIN_1 9
+#define DHT_PIN_2 46
+#define DHT_TYPE DHT21
 
-class SensorDS18B20: public TempSensor {
-  private:
-    OneWire gpio_wire_bus_;
-    DallasTemperature sensor_;
-    DeviceAddress sensor_address_;
-  public:
-    SensorDS18B20(const int gpio);
-    const float readTemp(const int index);
+void prepareSensors();
+float readTemperatures(const int index);
+float readHumidHideTemp(void); 
+float readHumidHideHum(void); 
+float readEnvironmentTemp(void); 
+float readEnvironmentHum(void); 
 
-};
-
-class SensorAM2301: public TempSensor {
-  private:
-  public:
-};
 
 #endif
