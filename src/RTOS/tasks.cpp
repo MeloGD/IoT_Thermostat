@@ -98,6 +98,6 @@ void createTasks(void) {
   xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
   xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
   xTaskCreatePinnedToCore(writeSensorsDataUI,"UpdateDataUITask",2048,NULL,3,&writeSensorsDataUITaskHandler,1);
-  xTaskCreatePinnedToCore(runClockUI,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
+  xTaskCreatePinnedToCore(runClockUI,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,0);
   //vTaskStartScheduler();
 }
