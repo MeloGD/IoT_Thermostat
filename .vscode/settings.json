@@ -4,6 +4,7 @@
         "ft6236.h": "c",
         "display.h": "c",
         "lovyangfx.hpp": "c",
-        "ui.h": "c"
+        "ui.h": "c",
+        "lv_switch.h": "c"
     }
 }

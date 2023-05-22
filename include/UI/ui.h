@@ -83,7 +83,7 @@ extern lv_obj_t *ui_backbuttonscreen4;
 void ui_event_backbuttontextscreen4( lv_event_t * e);
 extern lv_obj_t *ui_backbuttontextscreen4;
 extern lv_obj_t *ui_titlescren4;
-extern lv_obj_t *ui_onrollersecren4;
+extern lv_obj_t *ui_onrollerscreen4;
 extern lv_obj_t *ui_offrollerscreen4;
 extern lv_obj_t *ui_tiempoactivad4;
 extern lv_obj_t *ui_hours4;
