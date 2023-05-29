@@ -79,36 +79,63 @@ void setDisplayBrightness(const uint8_t value) {
 }
 
 // WIFI Management
-void ui_event_closepopupwifiwindow( lv_event_t * e) {
-    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
-    if (event_code == LV_EVENT_CLICKED) {
-        //_ui_screen_change( ui_screen1, LV_SCR_LOAD_ANIM_NONE, 0, 0);
-        lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_state( ui_wifiswitch, LV_STATE_CHECKED);
-        lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_add_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
-    }
+void uiEventCloseWiFiWindow( lv_event_t * e) {
+  lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+  if (event_code == LV_EVENT_CLICKED) {
+    lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_state( ui_wifiswitch, LV_STATE_CHECKED);
+    lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
+  }
 }
 
-int current_found_networks = 0;
-int last_found_networks = 0;
+void drawCleanEEPROMMessageBox(void) {
+  const char text[] = { "Por favor, confirme el procedimiento." }; 
+  static const char* options[] = {"Aceptar", "Rechazar", ""}; 
+  
+  if (ui_reportwifimessagebox != NULL) {
+    if (!eeprom_message_box_drawn) {
+      ui_reportwifimessagebox = lv_msgbox_create(NULL, "'Borrar red actual'", text, options, false);
+      lv_obj_center(ui_reportwifimessagebox);
+      eeprom_message_box_drawn = true;
+    }
+    if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 1) {
+      eeprom_message_box_requested = false;
+      eeprom_message_box_drawn = false;
+      lv_msgbox_close(ui_reportwifimessagebox);
+    }
+  }  
+}
+
+void uiEventCleanEEPROM( lv_event_t * e) {
+  lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+  if (event_code == LV_EVENT_CLICKED) {
+    eeprom_message_box_requested = true;
+  }
+}
 
 void drawWiFiMenu(WifiScanData wifi_data) {
   current_found_networks = wifi_data.size();
-  if (current_found_networks != last_found_networks) {
-    lv_obj_clean(ui_wifilist);
-    lv_list_add_text(ui_wifilist, "Opciones");
-    //añadir a eeprom, comprobar si hay claves guardadas, mostrando ventana de información
-    //implementar las funciones en networking.h y networking.cpp, luego llamarlas
-    //aquí
-    ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
-    ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Salir");
-    lv_obj_add_event_cb(ui_wifilistoptions, ui_event_closepopupwifiwindow, LV_EVENT_ALL, NULL);
-    lv_list_add_text(ui_wifilist, "Redes disponibles");
-    for (int i = 0; i < wifi_data.size(); i++) {
-      ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_WIFI, wifi_data[i][0].c_str());
+  if (ui_wifilist != NULL) {
+    if (current_found_networks != last_found_networks) {
+      lv_obj_clean(ui_wifilist);
+      lv_list_add_text(ui_wifilist, "Opciones");
+      //añadir a eeprom, comprobar si hay claves guardadas, mostrando ventana de información
+      //implementar las funciones en networking.h y networking.cpp, luego llamarlas
+      //aquí
+      ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
+      
+      lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanEEPROM, LV_EVENT_ALL, NULL);
+      ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Salir");
+      lv_obj_add_event_cb(ui_wifilistoptions, uiEventCloseWiFiWindow, LV_EVENT_ALL, NULL);
+      lv_list_add_text(ui_wifilist, "Redes disponibles");
+      for (int i = 0; i < wifi_data.size(); i++) {
+        ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_WIFI, wifi_data[i][0].c_str());
+      }
+      last_found_networks = current_found_networks;
     }
-    last_found_networks = current_found_networks;
-    
-  }
+    if (eeprom_message_box_requested) {
+      drawCleanEEPROMMessageBox();
+    }
+  }  
 }

@@ -148,8 +148,8 @@ static void updateActiveTimeUVATask(void *args) {
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
   while(1) {
-    if (ui_screen1 != lv_scr_act() && ui_Screen2 != lv_scr_act() &&
-        ui_Screen4 != lv_scr_act() && ui_Screen5 != lv_scr_act()) {
+    if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
+        ui_screen4 != lv_scr_act() && ui_screen5 != lv_scr_act()) {
       xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen3, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen3, roller_option2, 10);
@@ -179,8 +179,8 @@ static void updateActiveTimeUVBTask(void *args) {
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
   while(1) {
-    if (ui_screen1 != lv_scr_act() && ui_Screen2 != lv_scr_act() &&
-        ui_Screen3 != lv_scr_act() && ui_Screen5 != lv_scr_act()) {
+    if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
+        ui_screen3 != lv_scr_act() && ui_screen5 != lv_scr_act()) {
       xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen4, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen4, roller_option2, 10);
@@ -210,8 +210,8 @@ static void updateActiveTimePlantsTask(void *args) {
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
   while(1) {
-    if (ui_screen1 != lv_scr_act() && ui_Screen2 != lv_scr_act() &&
-        ui_Screen4 != lv_scr_act() && ui_Screen3 != lv_scr_act()) {
+    if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
+        ui_screen4 != lv_scr_act() && ui_screen3 != lv_scr_act()) {
       xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen5, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen5, roller_option2, 10);
@@ -242,8 +242,8 @@ static void setMaxTemperatureUVATask(void *args) {
   char max_temp_slider_value[8];
   int value;
   while(1) {
-    if (ui_screen1 != lv_scr_act() && ui_Screen2 != lv_scr_act() &&
-        ui_Screen4 != lv_scr_act() && ui_Screen5 != lv_scr_act()) { 
+    if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
+        ui_screen4 != lv_scr_act() && ui_screen5 != lv_scr_act()) { 
       xSemaphoreTake(mutex, portMAX_DELAY);
       value = lv_slider_get_value(ui_tempslider3);
       sprintf(max_temp_slider_value, "%02d", value);
