@@ -20,7 +20,11 @@ lv_obj_t *ui_moisttemp;
 lv_obj_t *ui_coldtemp;
 lv_obj_t *ui_environmentrelativehum;
 lv_obj_t *ui_moistrelativehum;
+lv_obj_t *ui_wifilist;
+lv_obj_t *ui_wifilistoptions;
 void ui_event_nextbuttonscreen1( lv_event_t * e);
+void ui_event_switchpopupwifiwindow( lv_event_t * e);
+void ui_event_closepopupwifiwindow( lv_event_t * e);
 lv_obj_t *ui_nextbuttonscreen1;
 lv_obj_t *ui_nextbuttontextscreen1;
 lv_obj_t *ui_Screen2;
@@ -100,7 +104,7 @@ lv_obj_t *ui____initial_actions0;
 void ui_event_nextbuttonscreen1( lv_event_t * e) {
     lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
 if ( event_code == LV_EVENT_RELEASED) {
-      _ui_screen_change( ui_Screen2, LV_SCR_LOAD_ANIM_NONE, 0, 00);
+      _ui_screen_change( ui_Screen2, LV_SCR_LOAD_ANIM_NONE, 0, 0);
 }
 }
 void ui_event_backbuttonscreen2( lv_event_t * e) {
@@ -163,7 +167,15 @@ if ( event_code == LV_EVENT_RELEASED) {
       _ui_screen_change( ui_Screen2, LV_SCR_LOAD_ANIM_NONE, 0, 0);
 }
 }
+void ui_event_switchpopupwifiwindow( lv_event_t * e) {
+    lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+    if (event_code == LV_EVENT_VALUE_CHANGED) {
+        lv_obj_clear_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_clear_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
 
+    }
+}
 ///////////////////// SCREENS ////////////////////
 void ui_screen1_screen_init(void)
 {
@@ -379,6 +391,15 @@ lv_obj_set_style_text_font(ui_nextbuttontextscreen1, &lv_font_montserrat_12, LV_
 
 lv_obj_add_event_cb(ui_nextbuttonscreen1, ui_event_nextbuttonscreen1, LV_EVENT_ALL, NULL);
 
+// WiFi Menu
+ui_wifilist = lv_list_create(ui_screen1);
+lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
+lv_obj_set_size(ui_wifilist, 400 , 200);
+lv_obj_center(ui_wifilist);
+
+ui_wifilistoptions = lv_obj_create(NULL);
+
+lv_obj_add_event_cb(ui_wifiswitch, ui_event_switchpopupwifiwindow, LV_EVENT_ALL, NULL);
 }
 void ui_Screen2_screen_init(void)
 {

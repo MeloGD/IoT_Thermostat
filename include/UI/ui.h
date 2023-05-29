@@ -38,7 +38,12 @@ extern lv_obj_t *ui_moisttemp;
 extern lv_obj_t *ui_coldtemp;
 extern lv_obj_t *ui_environmentrelativehum;
 extern lv_obj_t *ui_moistrelativehum;
+extern lv_obj_t *ui_wifilist;
+extern lv_obj_t *ui_wifilistoptions;
+
 void ui_event_nextbuttonscreen1( lv_event_t * e);
+void ui_event_switchpopupwifiwindow( lv_event_t * e);
+void ui_event_closepopupwifiwindow( lv_event_t * e);
 extern lv_obj_t *ui_nextbuttonscreen1;
 extern lv_obj_t *ui_nextbuttontextscreen1;
 extern lv_obj_t *ui_Screen2;

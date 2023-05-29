@@ -1,7 +1,4 @@
 #include "RTOS/tasks.h"
-#include "UI/mcu_ui.h"
-#include "Devices/sensor.h"
-#include "Devices/rtc.h"
 
 // Handlers
 TaskHandle_t lvglHandler = NULL;
@@ -12,11 +9,17 @@ TaskHandle_t updateActiveTimeUVATaskHandler = NULL;
 TaskHandle_t updateActiveTimeUVBTaskHandler = NULL;
 TaskHandle_t updateActiveTimePlantsTaskHandler = NULL;
 TaskHandle_t setMaxTemperatureUVATaskHandler = NULL;
+TaskHandle_t lightSystemTaskHandler = NULL;
+TaskHandle_t wifiScannerTaskHandler = NULL;
+TaskHandle_t drawWiFiMenuTaskHandler = NULL;
 
 // Mutex
 static SemaphoreHandle_t mutex = NULL;
 static int lock;
 
+WifiScanData wifi_data;
+
+/// Tasks ///
 // MCU lvgl UI orchestator
 static void runUI (void *args) {
   while (1) {
@@ -24,8 +27,6 @@ static void runUI (void *args) {
     vTaskDelay(5 / portTICK_RATE_MS);
   }
 }
-
-
 
 // Brightness control
 int last_state = HIGH;
@@ -49,7 +50,7 @@ static void updateScreenBrightnessTask(void *args) {
 }
 
 // Write temps/humidity UI
-static void writeSensorsDataUI(void *args) {
+static void writeSensorsDataUITask(void *args) {
   float value;
   char formatted_value[8];
   prepareSensors();
@@ -80,7 +81,7 @@ static void writeSensorsDataUI(void *args) {
 
 // Updates screens clock
 
-static void runClockUI(void *args) {
+static void runClockUITask(void *args) {
   configRTC();
   char rtc_time[8];
   char format[] = "hh:mm";
@@ -99,19 +100,50 @@ static void runClockUI(void *args) {
 
 // Shows the difference betweeen, for example, "on hour" and "off hour"
 
-void getDifference(char* result, const char* num1, const char* num2) {
+void getDifference(char* result1, char* result2, const char* number1, const char* number2, const char* number3, const char* number4) {
+    char hours_remaining[3], minutes_remaining[3];
+    int hour_difference = 0, minute_difference = 0;
     // De array de chars a numeros
-    int number1 = atoi(num1);
-    int number2 = atoi(num2);
+    int hour1 = atoi(number1);
+    int minute_1 = atoi(number2);
+    int hour2 = atoi(number3);
+    int minute_2 = atoi(number4);
     // Calculamos la diferencia y reportamos el resultado con sprintf 
-    int difference = number1 - number2;
-    if (difference < 0) {
-      difference *= -1;
+    if (hour1 == hour2) {
+      if (minute_1 > minute_2) {
+        hour_difference = 23;
+        minute_difference = 60 - (minute_1 - minute_2);
+      } else if (minute_1 == minute_2) {
+        minute_difference = 0;
+      } else {
+        minute_difference = minute_2 - minute_1;
+      }
+    } else if (hour1 > hour2 ) {
+      hour_difference = 24 - (hour1 - hour2);
+      if (minute_1 > minute_2) {
+        minute_difference = 60 - (minute_1 - minute_2);
+      } else if (minute_1 == minute_2) {
+        minute_difference = 0;
+      } else {
+        minute_difference = minute_2 - minute_1;
+      }
+    } else if (hour2 > hour1) {
+      hour_difference =  hour2 - hour1;
+      if (minute_1 > minute_2) {
+        hour_difference--;
+        minute_difference = 60 - (minute_1 - minute_2);
+      } else if (minute_1 == minute_2) {
+        minute_difference = 0;
+      } else {
+        minute_difference = minute_2 - minute_1;
+      }
     }
-    sprintf(result, "%02d", difference);
+
+    sprintf(result1, "%02d", hour_difference);
+    sprintf(result2, "%02d", minute_difference);
 };
 
-static void updateActiveTimeUVA(void *args) {
+static void updateActiveTimeUVATask(void *args) {
   char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
@@ -131,8 +163,7 @@ static void updateActiveTimeUVA(void *args) {
       mins2[0] = roller_option2[3];
       mins2[1] = roller_option2[4];
 
-      getDifference(result1, hours1, hours2);
-      getDifference(result2, mins1, mins2);
+      getDifference(result1, result2, hours1, mins1, hours2, mins2);
 
       lv_label_set_text(ui_hours3 , result1);
       lv_label_set_text(ui_minutes3 , result2);
@@ -143,7 +174,7 @@ static void updateActiveTimeUVA(void *args) {
   }
 }
 
-static void updateActiveTimeUVB(void *args) {
+static void updateActiveTimeUVBTask(void *args) {
   char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
@@ -163,8 +194,7 @@ static void updateActiveTimeUVB(void *args) {
       mins2[0] = roller_option2[3];
       mins2[1] = roller_option2[4];
 
-      getDifference(result1, hours1, hours2);
-      getDifference(result2, mins1, mins2);
+      getDifference(result1, result2, hours1, mins1, hours2, mins2);
 
       lv_label_set_text(ui_hours4 , result1);
       lv_label_set_text(ui_minutes4 , result2);
@@ -175,7 +205,7 @@ static void updateActiveTimeUVB(void *args) {
   }
 }
 
-static void updateActiveTimePlants(void *args) {
+static void updateActiveTimePlantsTask(void *args) {
   char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
   char hours1[3], mins1[3], hours2[3], mins2[3]; 
 
@@ -195,20 +225,20 @@ static void updateActiveTimePlants(void *args) {
       mins2[0] = roller_option2[3];
       mins2[1] = roller_option2[4];
 
-      getDifference(result1, hours1, hours2);
-      getDifference(result2, mins1, mins2);
+      getDifference(result1, result2, hours1, mins1, hours2, mins2);
 
       lv_label_set_text(ui_hours5 , result1);
       lv_label_set_text(ui_minutes5 , result2);
       xSemaphoreGive(mutex);
-    }
+    } 
+    
     
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
 
 // Sets the maximum temperature that the UVA bulb would target
-static void setMaxTemperatureUVA(void *args) {
+static void setMaxTemperatureUVATask(void *args) {
   char max_temp_slider_value[8];
   int value;
   while(1) {
@@ -223,16 +253,71 @@ static void setMaxTemperatureUVA(void *args) {
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
-// 1 funciona con 2, 1 funciona con 3, pero 2 con 3 no
+
+// Lights handling
+static void controlLightsSystemTask(void *args) {
+  digitalWrite(UVA_RELAY_PIN, LOW);
+  digitalWrite(UVB_RELAY_PIN, LOW);
+  digitalWrite(PLANTS_RELAY_PIN, LOW);
+  while (1) {
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    if (lv_obj_has_state(ui_uvaswitch, LV_STATE_CHECKED)) {
+      switchUVARelay(0);
+    } else {
+      switchUVARelay(1);
+    }
+    if (lv_obj_has_state(ui_uvbswitch, LV_STATE_CHECKED)) {
+      switchUVBRelay(0);
+    } else {
+      switchUVBRelay(1);
+    }
+    if (lv_obj_has_state(ui_plantsswitch, LV_STATE_CHECKED)) {
+      switchPlantsRelay(0);
+    } else {
+      switchPlantsRelay(1);
+    }
+    
+    xSemaphoreGive(mutex);
+    vTaskDelay(100 / portTICK_RATE_MS);
+  }
+  
+}
+
+// WIFI Manager
+static void wifiScannerTask(void *args) {
+  //WiFi.begin();
+  while (1) {
+    //xSemaphoreTake(mutex2, portMAX_DELAY);
+    wifi_data = getWiFiSSIDs();
+    //xSemaphoreGive(mutex2);
+    vTaskDelay(50 / portTICK_RATE_MS);
+    }
+}
+
+static void drawWiFiMenu(void *args) {
+  while (1) {
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    //xSemaphoreTake(mutex2, portMAX_DELAY);
+    //delay(100);
+    drawWiFiMenu(wifi_data);
+    //xSemaphoreGive(mutex2);
+    xSemaphoreGive(mutex);
+    vTaskDelay(100 / portTICK_RATE_MS);
+    }
+}
+
 void createTasks(void) {
   mutex = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
   xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
-  xTaskCreatePinnedToCore(writeSensorsDataUI,"UpdateDataUITask",2048,NULL,2,&writeSensorsDataUITaskHandler,1);
-  xTaskCreatePinnedToCore(runClockUI,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimeUVA,"UpdateActiveTimeUVA",2048,NULL,3,&updateActiveTimeUVATaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimeUVB,"UpdateActiveTimeUVB",2048,NULL,3,&updateActiveTimeUVBTaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimePlants,"UpdateActiveTimePlants",2048,NULL,3,&updateActiveTimePlantsTaskHandler,1);
-  xTaskCreatePinnedToCore(setMaxTemperatureUVA,"SetMaxTempUVA",2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
-  //vTaskStartScheduler();
+  xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",2048,NULL,2,&writeSensorsDataUITaskHandler,1);
+  xTaskCreatePinnedToCore(runClockUITask,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimeUVATask,"UpdateActiveTimeUVA",2048,NULL,3,&updateActiveTimeUVATaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimeUVBTask,"UpdateActiveTimeUVB",2048,NULL,3,&updateActiveTimeUVBTaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimePlantsTask,"UpdateActiveTimePlants",2048,NULL,3,&updateActiveTimePlantsTaskHandler,1);
+  xTaskCreatePinnedToCore(setMaxTemperatureUVATask,"SetMaxTempUVA",2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
+  xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",2048,NULL,3,&lightSystemTaskHandler,1);
+  xTaskCreatePinnedToCore(wifiScannerTask,"WifiScanner",4096,NULL,1,&wifiScannerTaskHandler,0);
+  xTaskCreatePinnedToCore(drawWiFiMenu,"DrawWifiMenu",4096,NULL,2,&drawWiFiMenuTaskHandler,1);
+  
 }
