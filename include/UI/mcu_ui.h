@@ -14,6 +14,9 @@ static bool credentials_message_box_drawn = false;
 static bool credentials_message_box_requested = false;
 static int current_found_networks = 0;
 static int last_found_networks = 0;
+static const char *selected_ssid = "";
+static const char *selected_password = "";
+
 
 void drawDisplay( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p);
 void readTouchpad(lv_indev_drv_t *indev_driver, lv_indev_data_t *data);

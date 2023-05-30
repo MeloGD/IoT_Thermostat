@@ -12,10 +12,11 @@ TaskHandle_t setMaxTemperatureUVATaskHandler = NULL;
 TaskHandle_t lightSystemTaskHandler = NULL;
 TaskHandle_t wifiScannerTaskHandler = NULL;
 TaskHandle_t drawWiFiMenuTaskHandler = NULL;
+TaskHandle_t connectWiFiTaskHandler = NULL;
 
 // Mutex
 static SemaphoreHandle_t mutex = NULL;
-static int lock;
+static SemaphoreHandle_t mutex2 = NULL;
 
 WifiScanData wifi_data;
 
@@ -80,7 +81,6 @@ static void writeSensorsDataUITask(void *args) {
 }
 
 // Updates screens clock
-
 static void runClockUITask(void *args) {
   configRTC();
   char rtc_time[8];
@@ -99,7 +99,6 @@ static void runClockUITask(void *args) {
 }
 
 // Shows the difference betweeen, for example, "on hour" and "off hour"
-
 void getDifference(char* result1, char* result2, const char* number1, const char* number2, const char* number3, const char* number4) {
     char hours_remaining[3], minutes_remaining[3];
     int hour_difference = 0, minute_difference = 0;
@@ -231,8 +230,7 @@ static void updateActiveTimePlantsTask(void *args) {
       lv_label_set_text(ui_minutes5 , result2);
       xSemaphoreGive(mutex);
     } 
-    
-    
+
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
@@ -276,8 +274,8 @@ static void controlLightsSystemTask(void *args) {
     } else {
       switchPlantsRelay(1);
     }
-    
     xSemaphoreGive(mutex);
+
     vTaskDelay(100 / portTICK_RATE_MS);
   }
   
@@ -285,24 +283,41 @@ static void controlLightsSystemTask(void *args) {
 
 // WIFI Manager
 static void wifiScannerTask(void *args) {
-  //WiFi.begin();
   while (1) {
+    xSemaphoreTake(mutex2, portMAX_DELAY);
     wifi_data = getWiFiSSIDs();
-    vTaskDelay(50 / portTICK_RATE_MS);
+    xSemaphoreGive(mutex2);
+    vTaskDelay(2000 / portTICK_RATE_MS);
     }
 }
 
-static void drawWiFiMenu(void *args) {
+static void drawWiFiMenuTask(void *args) {
   while (1) {
     xSemaphoreTake(mutex, portMAX_DELAY);
+    xSemaphoreTake(mutex2, portMAX_DELAY);
     drawWiFiMenu(wifi_data);
+    xSemaphoreGive(mutex2);
     xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
     }
 }
 
+static void connectWiFiMenuTask(void *args) {
+  while (1) {
+    // estar atento a si reinicia porque puede ser que
+    // como la tarea anterior esta utilizando la flash en un determinado momento,
+    // esta intenta acceder al mismo momento, produciendo el reinicio
+    xSemaphoreTake(mutex2, portMAX_DELAY);
+    connectWiFi();
+    xSemaphoreGive(mutex2);
+    vTaskDelay(200 / portTICK_RATE_MS);
+    }
+}
+
+
 void createTasks(void) {
   mutex = xSemaphoreCreateMutex();
+  mutex2 = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
   xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
   xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",2048,NULL,2,&writeSensorsDataUITaskHandler,1);
@@ -313,6 +328,7 @@ void createTasks(void) {
   xTaskCreatePinnedToCore(setMaxTemperatureUVATask,"SetMaxTempUVA",2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
   xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",2048,NULL,3,&lightSystemTaskHandler,1);
   xTaskCreatePinnedToCore(wifiScannerTask,"WifiScanner",4096,NULL,1,&wifiScannerTaskHandler,0);
-  xTaskCreatePinnedToCore(drawWiFiMenu,"DrawWifiMenu",4096,NULL,2,&drawWiFiMenuTaskHandler,1);
+  xTaskCreatePinnedToCore(drawWiFiMenuTask,"DrawWifiMenu",4096,NULL,2,&drawWiFiMenuTaskHandler,1);
+  xTaskCreatePinnedToCore(connectWiFiMenuTask,"ConnectWifi",4096,NULL,2,&connectWiFiTaskHandler,0);
   
 }

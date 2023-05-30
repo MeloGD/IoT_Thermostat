@@ -104,14 +104,9 @@ void drawCleanEEPROMMessageBox(void) {
   }  
 }
 
-String contra = "";
-
 void drawCredentialsMessageBox(void) {
   const char text[] = { "Por favor, confirme el procedimiento." }; 
   static const char* options[] = {"Aceptar", "Rechazar", ""}; 
-  const int error1 = 1;
-  const int error2 = 2;
-  const int error3 = 3;
   
   if (ui_reportwifimessagebox != NULL) {
     if (!credentials_message_box_drawn) {    
@@ -120,24 +115,26 @@ void drawCredentialsMessageBox(void) {
       ui_wifipasswordarea = lv_textarea_create(ui_screen1);
       lv_obj_set_size(ui_wifipasswordarea, 480, 160);
       lv_textarea_set_placeholder_text(ui_wifipasswordarea, "Escriba la clave...");
-      contra = lv_textarea_get_text(ui_wifipasswordarea);
+      selected_password = lv_textarea_get_text(ui_wifipasswordarea);
       lv_keyboard_set_textarea(ui_wifikeyboard, ui_wifipasswordarea);
       credentials_message_box_drawn = true;
     }
     if (lv_keyboard_get_selected_btn(ui_wifikeyboard) == 39) {
-      // antes de salir, comprobar que la clave es correcta
-      // si falla el intento de login, no deja salir salvo que no esté nada escrito en textarea
-      // guardar contraseña en FLASH una vez sea correcto
-      // solo intentar connectar, si es correcto, desconectar luego.
-      // crear una tarea nueva en el core 0 que lea esos credenciales almacenados y gestionar 
-      // la conexión desde ahí
+      if (tryWiFi(selected_ssid, selected_password)) {
+        Serial.print("\n CONEXION CORRECTA ");
+        ui_reportwifimessagebox = lv_msgbox_create(NULL, "'Claves correctas'", "Las claves introducidas han sido correctas. Se han guardado en la memoria interna.", NULL, true);
+        lv_obj_center(ui_reportwifimessagebox);
+      } else {
+        Serial.print("\n CONEXION ERRONEA ");
+        ui_reportwifimessagebox = lv_msgbox_create(NULL, "'Claves incorrectas'", "Las claves introducidas han sido incorrectas. Introduzcalas de nuevo.", NULL, true);
+        lv_obj_center(ui_reportwifimessagebox);
+      }
       credentials_message_box_requested = false;
       credentials_message_box_drawn = false;
       lv_obj_del_async(ui_wifipasswordarea);
-      lv_obj_del_async(ui_wifikeyboard);
+      lv_obj_del_async(ui_wifikeyboard);     
     }
   } 
-  Serial.print(lv_keyboard_get_selected_btn(ui_wifikeyboard)); 
 }
 
 // WiFi menu events
@@ -161,19 +158,19 @@ void uiEventCleanEEPROM( lv_event_t * e) {
 void uiEventWriteWiFiCredentials( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
+    selected_ssid = lv_list_get_btn_text(ui_wifilistoptions, target);
     credentials_message_box_requested = true;
   }
 }
 
+// WiFi menu
 void drawWiFiMenu(WifiScanData wifi_data) {
   current_found_networks = wifi_data.size();
   if (ui_wifilist != NULL) {
     if (current_found_networks != last_found_networks) {
       lv_obj_clean(ui_wifilist);
       lv_list_add_text(ui_wifilist, "Opciones");
-      //añadir a eeprom, comprobar si hay claves guardadas, mostrando ventana de información
-      //implementar las funciones en networking.h y networking.cpp, luego llamarlas
-      //aquí
+
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanEEPROM, LV_EVENT_ALL, NULL);
       

@@ -21,6 +21,7 @@ static void updateActiveTimeUVATask(void *args);
 static void updateActiveTimeUVBTask(void *args);
 static void updateActiveTimePlantsTask(void *args);
 static void setMaxTemperatureUVATask(void *args);
-static void drawWiFiMenu(void *args);
+static void drawWiFiMenuTask(void *args);
+static void connectWiFiMenuTask(void *args);
 
 #endif
