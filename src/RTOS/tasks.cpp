@@ -287,9 +287,7 @@ static void controlLightsSystemTask(void *args) {
 static void wifiScannerTask(void *args) {
   //WiFi.begin();
   while (1) {
-    //xSemaphoreTake(mutex2, portMAX_DELAY);
     wifi_data = getWiFiSSIDs();
-    //xSemaphoreGive(mutex2);
     vTaskDelay(50 / portTICK_RATE_MS);
     }
 }
@@ -297,10 +295,7 @@ static void wifiScannerTask(void *args) {
 static void drawWiFiMenu(void *args) {
   while (1) {
     xSemaphoreTake(mutex, portMAX_DELAY);
-    //xSemaphoreTake(mutex2, portMAX_DELAY);
-    //delay(100);
     drawWiFiMenu(wifi_data);
-    //xSemaphoreGive(mutex2);
     xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
     }

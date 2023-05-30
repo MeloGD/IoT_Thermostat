@@ -23,6 +23,8 @@ lv_obj_t *ui_moistrelativehum;
 lv_obj_t *ui_wifilist;
 lv_obj_t *ui_wifilistoptions;
 lv_obj_t *ui_reportwifimessagebox;
+lv_obj_t *ui_wifikeyboard;
+lv_obj_t *ui_wifipasswordarea;
 void ui_event_nextbuttonscreen1( lv_event_t * e);
 void ui_event_switchpopupwifiwindow( lv_event_t * e);
 lv_obj_t *ui_nextbuttonscreen1;
@@ -173,7 +175,6 @@ void ui_event_switchpopupwifiwindow( lv_event_t * e) {
         lv_obj_clear_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
         lv_obj_clear_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
-
     }
 }
 ///////////////////// SCREENS ////////////////////
@@ -400,6 +401,10 @@ lv_obj_center(ui_wifilist);
 ui_wifilistoptions = lv_obj_create(NULL);
 
 ui_reportwifimessagebox = lv_obj_create(NULL);
+
+ui_wifikeyboard = lv_obj_create(NULL);
+
+ui_wifipasswordarea = lv_obj_create(NULL);
 
 lv_obj_add_event_cb(ui_wifiswitch, ui_event_switchpopupwifiwindow, LV_EVENT_ALL, NULL);
 }

@@ -79,16 +79,6 @@ void setDisplayBrightness(const uint8_t value) {
 }
 
 // WIFI Management
-void uiEventCloseWiFiWindow( lv_event_t * e) {
-  lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
-  if (event_code == LV_EVENT_CLICKED) {
-    lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_state( ui_wifiswitch, LV_STATE_CHECKED);
-    lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
-  }
-}
-
 void drawCleanEEPROMMessageBox(void) {
   const char text[] = { "Por favor, confirme el procedimiento." }; 
   static const char* options[] = {"Aceptar", "Rechazar", ""}; 
@@ -99,7 +89,14 @@ void drawCleanEEPROMMessageBox(void) {
       lv_obj_center(ui_reportwifimessagebox);
       eeprom_message_box_drawn = true;
     }
-    if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 1) {
+    if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 0) {
+      writeSSIDFlash("");
+      writePasswordFlash("");
+      // LLAMAR A LA DESCONEXIÓN DEL MÓDULO WIFI
+      eeprom_message_box_requested = false;
+      eeprom_message_box_drawn = false;
+      lv_msgbox_close(ui_reportwifimessagebox);
+    } else if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 1) {
       eeprom_message_box_requested = false;
       eeprom_message_box_drawn = false;
       lv_msgbox_close(ui_reportwifimessagebox);
@@ -107,10 +104,64 @@ void drawCleanEEPROMMessageBox(void) {
   }  
 }
 
+String contra = "";
+
+void drawCredentialsMessageBox(void) {
+  const char text[] = { "Por favor, confirme el procedimiento." }; 
+  static const char* options[] = {"Aceptar", "Rechazar", ""}; 
+  const int error1 = 1;
+  const int error2 = 2;
+  const int error3 = 3;
+  
+  if (ui_reportwifimessagebox != NULL) {
+    if (!credentials_message_box_drawn) {    
+      ui_wifikeyboard = lv_keyboard_create(ui_screen1);
+      vTaskDelay(50);
+      ui_wifipasswordarea = lv_textarea_create(ui_screen1);
+      lv_obj_set_size(ui_wifipasswordarea, 480, 160);
+      lv_textarea_set_placeholder_text(ui_wifipasswordarea, "Escriba la clave...");
+      contra = lv_textarea_get_text(ui_wifipasswordarea);
+      lv_keyboard_set_textarea(ui_wifikeyboard, ui_wifipasswordarea);
+      credentials_message_box_drawn = true;
+    }
+    if (lv_keyboard_get_selected_btn(ui_wifikeyboard) == 39) {
+      // antes de salir, comprobar que la clave es correcta
+      // si falla el intento de login, no deja salir salvo que no esté nada escrito en textarea
+      // guardar contraseña en FLASH una vez sea correcto
+      // solo intentar connectar, si es correcto, desconectar luego.
+      // crear una tarea nueva en el core 0 que lea esos credenciales almacenados y gestionar 
+      // la conexión desde ahí
+      credentials_message_box_requested = false;
+      credentials_message_box_drawn = false;
+      lv_obj_del_async(ui_wifipasswordarea);
+      lv_obj_del_async(ui_wifikeyboard);
+    }
+  } 
+  Serial.print(lv_keyboard_get_selected_btn(ui_wifikeyboard)); 
+}
+
+// WiFi menu events
+void uiEventCloseWiFiWindow( lv_event_t * e) {
+  lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+  if (event_code == LV_EVENT_CLICKED) {
+    lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_state( ui_wifiswitch, LV_STATE_CHECKED);
+    lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
+  }
+}
+
 void uiEventCleanEEPROM( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
     eeprom_message_box_requested = true;
+  }
+}
+
+void uiEventWriteWiFiCredentials( lv_event_t * e) {
+  lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
+  if (event_code == LV_EVENT_CLICKED) {
+    credentials_message_box_requested = true;
   }
 }
 
@@ -124,18 +175,22 @@ void drawWiFiMenu(WifiScanData wifi_data) {
       //implementar las funciones en networking.h y networking.cpp, luego llamarlas
       //aquí
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
-      
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanEEPROM, LV_EVENT_ALL, NULL);
+      
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Salir");
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCloseWiFiWindow, LV_EVENT_ALL, NULL);
+      
       lv_list_add_text(ui_wifilist, "Redes disponibles");
       for (int i = 0; i < wifi_data.size(); i++) {
         ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_WIFI, wifi_data[i][0].c_str());
+        lv_obj_add_event_cb(ui_wifilistoptions, uiEventWriteWiFiCredentials, LV_EVENT_ALL, NULL);
       }
       last_found_networks = current_found_networks;
     }
     if (eeprom_message_box_requested) {
       drawCleanEEPROMMessageBox();
+    } else if (credentials_message_box_requested) {
+      drawCredentialsMessageBox();
     }
   }  
 }

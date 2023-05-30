@@ -14,9 +14,10 @@ void setup(void) {
   pinMode(5, OUTPUT);
   //pinMode(18, OUTPUT);
 
+  initFlashMemmory();
   createTasks();
   launchUi();
-  //drawWIFIMenu();
+
 
   Serial.println( "Setup done" );
 }
