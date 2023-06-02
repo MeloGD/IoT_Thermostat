@@ -69,67 +69,15 @@ bool tryWiFi(const char *ssid, const char *password) {
   }
 }
 
-void printLocalTime(){
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-  Serial.print("Day of week: ");
-  Serial.println(&timeinfo, "%A");
-  Serial.print("Month: ");
-  Serial.println(&timeinfo, "%B");
-  Serial.print("Day of Month: ");
-  Serial.println(&timeinfo, "%d");
-  Serial.print("Year: ");
-  Serial.println(&timeinfo, "%Y");
-  Serial.print("Hour: ");
-  Serial.println(&timeinfo, "%H");
-  Serial.print("Hour (12 hour format): ");
-  Serial.println(&timeinfo, "%I");
-  Serial.print("Minute: ");
-  Serial.println(&timeinfo, "%M");
-  Serial.print("Second: ");
-  Serial.println(&timeinfo, "%S");
+void connectWiFi(void) { 
+  WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
 
-  Serial.println("Time variables");
-  char timeHour[3];
-  strftime(timeHour,3, "%H", &timeinfo);
-  Serial.println(timeHour);
-  char timeWeekDay[10];
-  strftime(timeWeekDay,10, "%A", &timeinfo);
-  Serial.println(timeWeekDay);
-  Serial.println();
-}
-
-
-bool connectWiFi(void) {
-
-  if (WiFi.status() == WL_DISCONNECTED) {
-    Serial.print("\n Hora antes1: \n");
-    printLocalTime();
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
-    const ulong start_time = millis();
-    while (WiFi.status() != WL_CONNECTED && (millis() - start_time) < wifi_timeout) {
-      vTaskDelay(250 / portTICK_RATE_MS);
-    }
-    Serial.print("\n IP Asignada\n");
-    Serial.print(WiFi.localIP());
-    if (WiFi.status() == WL_CONNECTED) {
-      return true;
-    } else {
-      return false;
-    }
+  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+    lv_obj_add_state(ui_wifiswitch, LV_STATE_CHECKED);
+    Serial.println("Conectado al punto de acceso WiFi");
   } else {
-    Serial.print("\n Hora antes2: \n");
-    printLocalTime();
-    configTime(0,3600, "pool.ntp.org"); 
-    vTaskDelay(2000 / portTICK_RATE_MS);
-    Serial.print("\n Hora despues: \n");
-    printLocalTime();
-    return false;
-  }
-
+    WiFi.disconnect(true);
+    lv_obj_clear_state(ui_wifiswitch, LV_STATE_CHECKED);
+    Serial.println("No se pudo conectar al punto de acceso WiFi");
+  } 
 }

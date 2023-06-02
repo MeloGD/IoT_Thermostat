@@ -295,6 +295,7 @@ static void drawWiFiMenuTask(void *args) {
   while (1) {
     xSemaphoreTake(mutex, portMAX_DELAY);
     xSemaphoreTake(mutex2, portMAX_DELAY);
+    
     drawWiFiMenu(wifi_data);
     xSemaphoreGive(mutex2);
     xSemaphoreGive(mutex);
@@ -304,13 +305,10 @@ static void drawWiFiMenuTask(void *args) {
 
 static void connectWiFiMenuTask(void *args) {
   while (1) {
-    // estar atento a si reinicia porque puede ser que
-    // como la tarea anterior esta utilizando la flash en un determinado momento,
-    // esta intenta acceder al mismo momento, produciendo el reinicio
     xSemaphoreTake(mutex2, portMAX_DELAY);
     connectWiFi();
     xSemaphoreGive(mutex2);
-    vTaskDelay(200 / portTICK_RATE_MS);
+    vTaskDelay(250 / portTICK_RATE_MS);
     }
 }
 

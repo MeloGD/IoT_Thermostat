@@ -1,6 +1,7 @@
 #ifndef NETWORING_GUARD
 #define NETWORING_GUARD
 
+#include "UI/ui.h"
 #include "WiFi.h"
 #include "vector"
 #include "Preferences.h"
@@ -8,6 +9,7 @@
 
 
 typedef std::vector<std::vector<String>> WifiScanData;
+
 
 static Preferences device_data;
 
@@ -24,7 +26,7 @@ void writePasswordFlash(const char *password);
 const String readSSIDFlash(void);
 const String readPasswordFlash(void);
 bool tryWiFi(const char *ssid, const char *password);
-bool connectWiFi(void);
+void connectWiFi(void);
 
 
 #endif

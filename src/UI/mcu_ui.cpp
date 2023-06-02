@@ -142,9 +142,8 @@ void uiEventCloseWiFiWindow( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
     lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_state( ui_wifiswitch, LV_STATE_CHECKED);
     lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_flag( ui_wifiswitch,  LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag( ui_wifisettingsbutton,  LV_OBJ_FLAG_CLICKABLE);
   }
 }
 
