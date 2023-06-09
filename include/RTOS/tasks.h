@@ -21,7 +21,10 @@ static void updateActiveTimeUVATask(void *args);
 static void updateActiveTimeUVBTask(void *args);
 static void updateActiveTimePlantsTask(void *args);
 static void setMaxTemperatureUVATask(void *args);
+static void wifiScannerTask(void *args);
 static void drawWiFiMenuTask(void *args);
 static void connectWiFiMenuTask(void *args);
+static void connectMQTTBrokerTask(void *args);
+static void maintainMQTTBrokerTask(void *args);
 
 #endif

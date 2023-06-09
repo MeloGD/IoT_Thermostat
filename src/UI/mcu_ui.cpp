@@ -43,6 +43,7 @@ void readTouchpad( lv_indev_drv_t * indev_driver, lv_indev_data_t * data ) {
 
 void launchUi(void) {
   display.begin();        
+  //display.setRotation(3);
   display.setRotation(1);
   display.setBrightness(255);
   
@@ -72,6 +73,7 @@ void launchUi(void) {
   lv_indev_drv_register(&indev_drv);
 
   ui_init();
+  //lv_disp_set_rotation(lv_disp_get_default(), LV_DISP_ROT_180);
 }
 
 void setDisplayBrightness(const uint8_t value) {

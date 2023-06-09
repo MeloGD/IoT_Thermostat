@@ -1,7 +1,7 @@
 #ifndef ACTUATORS_GUARD
 #define ACTUATORS_GUARD
 
-#define DIMMER_PIN 555555
+#define DIMMER_PIN 5
 #define UVA_RELAY_PIN 6
 #define UVB_RELAY_PIN 4
 #define PLANTS_RELAY_PIN 5

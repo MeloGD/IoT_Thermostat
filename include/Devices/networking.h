@@ -8,8 +8,8 @@
 #include "time.h"
 
 
-typedef std::vector<std::vector<String>> WifiScanData;
 
+typedef std::vector<std::vector<String>> WifiScanData;
 
 static Preferences device_data;
 
@@ -17,6 +17,8 @@ static bool wifi_status = false;
 
 // 10 segundos
 const ulong wifi_timeout = 10 * 1000;
+
+static bool once = false;
 
 // Functions
 WifiScanData getWiFiSSIDs(void);

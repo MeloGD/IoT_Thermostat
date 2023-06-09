@@ -71,13 +71,15 @@ bool tryWiFi(const char *ssid, const char *password) {
 
 void connectWiFi(void) { 
   WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
-
-  if (WiFi.waitForConnectResult() == WL_CONNECTED) {
+  // INTEGRAR waitForConnect.... dentro del if,así borro los serial
+  if ( WiFi.waitForConnectResult(1000) == WL_CONNECTED) {
     lv_obj_add_state(ui_wifiswitch, LV_STATE_CHECKED);
     Serial.println("Conectado al punto de acceso WiFi");
+
   } else {
-    WiFi.disconnect(true);
-    lv_obj_clear_state(ui_wifiswitch, LV_STATE_CHECKED);
-    Serial.println("No se pudo conectar al punto de acceso WiFi");
-  } 
+      WiFi.disconnect(true);
+      lv_obj_clear_state(ui_wifiswitch, LV_STATE_CHECKED);
+      Serial.println("Se ha perdido conexión con el acceso WiFi");
+  }  
 }
+

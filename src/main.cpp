@@ -12,17 +12,15 @@ void setup(void) {
   pinMode(6, OUTPUT);
   pinMode(4, OUTPUT);
   pinMode(5, OUTPUT);
-  //pinMode(18, OUTPUT);
-
+  pinMode(18, OUTPUT);
   initFlashMemmory();
   createTasks();
-  launchUi();
-
+      
+  launchUi(); 
 
   Serial.println( "Setup done" );
 }
 
 void loop() {
-  //lv_timer_handler(); /* let the GUI do its work */
-  //delay(5);
+  //vTaskDelete(NULL);
 }
