@@ -25,13 +25,16 @@ extern "C" {
 #include "ui_comp.h"
 #include "ui_comp_hook.h"
 #include "ui_events.h"
+extern lv_obj_t *ui_loadingscreen;
+extern lv_obj_t *ui_loadingscreentext;
+extern lv_obj_t *ui_loadingscreenssid;
 extern lv_obj_t *ui_screen1;
 extern lv_obj_t *ui_topbarscreen1;
 extern lv_obj_t *ui_topbartitlescreen1;
 extern lv_obj_t *ui_clock;
 extern lv_obj_t *ui_wifiswitch;
 extern lv_obj_t *ui_wifitext;
-extern lv_obj_t *ui_wifisettingsbutton;
+//extern lv_obj_t *ui_wifisettingsbutton;
 extern lv_obj_t *ui_textmenuscreen1;
 extern lv_obj_t *ui_environmenttemp;
 extern lv_obj_t *ui_warmtemp;

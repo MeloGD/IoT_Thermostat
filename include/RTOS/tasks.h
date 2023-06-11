@@ -13,7 +13,7 @@ void createTasks(void);
 void getDifference(char* result1, char* result2, const char* hour1, const char* min1, const char* hour2, const char* min2);
 
 // Tasks functions
-static void runUI (void *args);
+void runUI (void *args);
 static void updateScreenBrightnessTask(void *args);
 static void writeSensorsDataUITask(void *args) ;
 static void runClockUITask(void *args) ;

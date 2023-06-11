@@ -1,4 +1,5 @@
 #include "UI/mcu_ui.h"
+#include "UI/ui_helpers.h"
 
 /*Change to your screen resolution*/
 // probar cambiar u32 a u16
@@ -106,15 +107,12 @@ void drawCleanEEPROMMessageBox(void) {
   }  
 }
 
-void drawCredentialsMessageBox(void) {
-  const char text[] = { "Por favor, confirme el procedimiento." }; 
-  static const char* options[] = {"Aceptar", "Rechazar", ""}; 
-  
+void drawCredentialsMessageBox(void) { 
   if (ui_reportwifimessagebox != NULL) {
     if (!credentials_message_box_drawn) {    
-      ui_wifikeyboard = lv_keyboard_create(ui_screen1);
+      ui_wifikeyboard = lv_keyboard_create(ui_loadingscreen);
       vTaskDelay(50);
-      ui_wifipasswordarea = lv_textarea_create(ui_screen1);
+      ui_wifipasswordarea = lv_textarea_create(ui_loadingscreen);
       lv_obj_set_size(ui_wifipasswordarea, 480, 160);
       lv_textarea_set_placeholder_text(ui_wifipasswordarea, "Escriba la clave...");
       selected_password = lv_textarea_get_text(ui_wifipasswordarea);
@@ -143,15 +141,21 @@ void drawCredentialsMessageBox(void) {
 void uiEventCloseWiFiWindow( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
-    lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_flag( ui_wifisettingsbutton,  LV_OBJ_FLAG_CLICKABLE);
+    _ui_screen_change( ui_screen1, LV_SCR_LOAD_ANIM_NONE, 0, 0);
+    
+    
+    //lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
+    //lv_obj_add_flag( ui_nextbuttonscreen1,  LV_OBJ_FLAG_CLICKABLE);
+    //lv_obj_add_flag( ui_wifisettingsbutton,  LV_OBJ_FLAG_CLICKABLE);
+    
+    // Si clico este botón, paso a la screen1 y luego borro la pantalla anterior
   }
 }
 
 void uiEventCleanEEPROM( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
+    //lv_label_set_text(ui_loadingscreenssid, "");
     eeprom_message_box_requested = true;
   }
 }
@@ -175,7 +179,7 @@ void drawWiFiMenu(WifiScanData wifi_data) {
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanEEPROM, LV_EVENT_ALL, NULL);
       
-      ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Salir");
+      ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Continuar con los ajustes actuales");
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCloseWiFiWindow, LV_EVENT_ALL, NULL);
       
       lv_list_add_text(ui_wifilist, "Redes disponibles");

@@ -1,6 +1,7 @@
 #include "UI/mcu_ui.h"
 #include "RTOS/tasks.h"
 
+TaskHandle_t lvglHandler = NULL;
 
 // setup y main
 void setup(void) {
@@ -17,8 +18,20 @@ void setup(void) {
   pinMode(18, OUTPUT);
   
   initFlashMemmory(); 
-  createTasks();
   launchUi(); 
+  xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
+  // while screenloading == screen_actual
+  while (lv_scr_act() == ui_loadingscreen) {
+    wifi_data = getWiFiSSIDs();
+    String ssid = readSSIDFlash();
+    lv_label_set_text(ui_loadingscreenssid, ssid.c_str());
+    delay(200);
+    drawWiFiMenu(wifi_data);
+    delay(100);
+  }
+  lv_obj_clean(ui_loadingscreen);
+ 
+  createTasks();
   
   WiFi.onEvent(wifiEvent);
   wifi_data = getWiFiSSIDs();

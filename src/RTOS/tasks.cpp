@@ -1,7 +1,7 @@
 #include "RTOS/tasks.h"
 
 // Handlers
-TaskHandle_t lvglHandler = NULL;
+//TaskHandle_t lvglHandler = NULL;
 TaskHandle_t updateBrightnessTaskHandler = NULL;
 TaskHandle_t writeSensorsDataUITaskHandler = NULL;
 TaskHandle_t runClockUITaskHandler = NULL;
@@ -19,18 +19,19 @@ TaskHandle_t maintainMQTTTaskHandler = NULL;
 // Mutex
 static SemaphoreHandle_t mutex = NULL;
 static SemaphoreHandle_t mutex2 = NULL;
-
 // Array of arways containing their differents networks and their data
 WifiScanData wifi_data;
 
 /// Tasks ///
 // MCU lvgl UI orchestator
-static void runUI (void *args) {
+
+void runUI (void *args) {
   while (1) {
     lv_timer_handler();
     vTaskDelay(5 / portTICK_RATE_MS);
   }
 }
+
 
 // Brightness control
 int last_state = HIGH;
@@ -333,7 +334,7 @@ static void connectMQTTBrokerTask(void *args) {
 void createTasks(void) {
   mutex = xSemaphoreCreateMutex();
   mutex2 = xSemaphoreCreateMutex();
-  xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
+  //xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
   xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
   xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",2048,NULL,2,&writeSensorsDataUITaskHandler,1);
   xTaskCreatePinnedToCore(runClockUITask,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
