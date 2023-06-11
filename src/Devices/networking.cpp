@@ -69,6 +69,8 @@ bool tryWiFi(const char *ssid, const char *password) {
   }
 }
 
+
+/*
 void connectWiFi(void) { 
   WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
   // INTEGRAR waitForConnect.... dentro del if,así borro los serial
@@ -82,4 +84,141 @@ void connectWiFi(void) {
       Serial.println("Se ha perdido conexión con el acceso WiFi");
   }  
 }
+*/
 
+AsyncMqttClient mqtt_client;
+IPAddress MQTT_SERVER(5 , 75 , 186,  218);
+
+TimerHandle_t mqtt_reconnect_timer;
+TimerHandle_t wifi_reconnect_timer;
+
+const char* ssid = "Azotea";
+const char* password = "@968CasA";
+
+String payload;
+
+
+void connectWiFi(void) {
+  Serial.println("Entrando al WiFi.");
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+  Serial.println("Número de redes disponibles: ");
+  Serial.print(WiFi.scanNetworks());
+  //String ssid2 = WiFi.SSID(0);
+
+  //WiFi.begin(ssid, password);
+  WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
+  while (WiFi.status() != WL_CONNECTED) { 
+     delay(100);  
+     Serial.print('.'); 
+  }
+  
+  Serial.println("Conexión establecida.");
+  Serial.println("IP:");
+  Serial.println(WiFi.localIP());
+
+}
+
+void plsWiFiWork(void) {
+  WiFi.getAutoReconnect();
+  while (WiFi.status() != WL_CONNECTED) { 
+     delay(100);  
+     Serial.print('.'); 
+  }
+}
+
+void wifiEvent(WiFiEvent_t event) {
+  switch (event) {
+  case SYSTEM_EVENT_STA_GOT_IP:
+    Serial.println("Evento: Se ha obtenido IP");
+    lv_obj_add_state(ui_wifiswitch, LV_STATE_CHECKED);
+    connectMQTT();
+    xTimerStop(wifi_reconnect_timer, 0);
+    break;
+  case SYSTEM_EVENT_STA_DISCONNECTED:
+    Serial.println("Se ha desconectado del WiFi.");
+    xTimerStop(mqtt_reconnect_timer, 0);
+    xTimerStart(wifi_reconnect_timer, 0);
+    lv_obj_clear_state(ui_wifiswitch, LV_STATE_CHECKED);
+    break;
+  }
+}
+
+void configMQTT(void) {
+  mqtt_reconnect_timer = xTimerCreate("MQTTTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectMQTT));
+  wifi_reconnect_timer = xTimerCreate("WiFiTimer", pdMS_TO_TICKS(5000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(plsWiFiWork));
+
+  mqtt_client.onConnect(onMQTTConnect);
+  mqtt_client.onDisconnect(onMQTTDisconnect);
+  mqtt_client.onSubscribe(onMQTTSubscribe);
+  mqtt_client.onUnsubscribe(onMQTTUnsubscribe);
+  mqtt_client.onMessage(onMQTTReceived);
+  mqtt_client.onPublish(onMQTTPublish);
+
+  mqtt_client.setServer( MQTT_SERVER , 30000);
+}
+
+void connectMQTT() {
+  Serial.println("Conectando al servidor MQTT...");
+  mqtt_client.connect();
+}
+
+void onMQTTConnect(bool status) {
+  Serial.println("Conectado al servidor MQTT!");
+  subscribeMQTT();
+}
+
+void onMQTTDisconnect(AsyncMqttClientDisconnectReason reason) {
+  Serial.println("Desconectado del servidor MQTT.");
+  if(WiFi.isConnected()) {
+    xTimerStart(mqtt_reconnect_timer, 0);
+  }
+}
+
+void onMQTTSubscribe(uint16_t packet_id, uint8_t qos) {
+  Serial.println("Subscripción correcta!");
+  Serial.print("  packetId: ");
+  Serial.println(packet_id);
+  Serial.print("  qos: ");
+  Serial.println(qos);
+}
+
+void onMQTTUnsubscribe(uint16_t packet_id) {
+  Serial.println("Unsubscripción correcta.");
+  Serial.print("  packetId: ");
+  Serial.println(packet_id);
+}
+
+void onMQTTReceived(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+  Serial.println("Topico recibido: ");
+  Serial.println(topic);
+  Serial.print(" : ");
+  String content = getPayloadContent(payload, len);
+  Serial.print(content);
+  Serial.println();
+}
+
+void onMQTTPublish(uint16_t packet_id) {
+  Serial.println("Publicación reconocida: ");
+  Serial.print("  packetId: ");
+  Serial.println(packet_id);
+}
+
+void publishMQTT(unsigned long data) {
+  payload = String(data);
+  mqtt_client.publish("hola/mundo", 0, true, (char*)payload.c_str());
+}
+
+void subscribeMQTT(void) {
+  uint16_t packetIdSub = mqtt_client.subscribe("hola/mundo", 0);
+  Serial.print("Subscrito a QoS 0, id del paquete: ");
+  Serial.println(packetIdSub);
+}
+
+String getPayloadContent(char* data, size_t len) {
+  String content = "";
+  for(size_t i = 0; i < len; i++) {
+    content.concat(data[i]);
+  }
+  return content;
+}

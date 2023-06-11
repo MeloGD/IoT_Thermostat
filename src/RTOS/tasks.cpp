@@ -20,6 +20,7 @@ TaskHandle_t maintainMQTTTaskHandler = NULL;
 static SemaphoreHandle_t mutex = NULL;
 static SemaphoreHandle_t mutex2 = NULL;
 
+// Array of arways containing their differents networks and their data
 WifiScanData wifi_data;
 
 /// Tasks ///
@@ -295,13 +296,13 @@ static void wifiScannerTask(void *args) {
 
 static void drawWiFiMenuTask(void *args) {
   while (1) {
-    //xSemaphoreTake(mutex, portMAX_DELAY);
-    xSemaphoreTake(mutex2, portMAX_DELAY);
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    //xSemaphoreTake(mutex2, portMAX_DELAY);
     
     drawWiFiMenu(wifi_data);
 
-    xSemaphoreGive(mutex2);
-    //xSemaphoreGive(mutex);
+    //xSemaphoreGive(mutex2);
+    xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
     }
 }
@@ -316,13 +317,14 @@ static void connectWiFiMenuTask(void *args) {
   }
 }
 
+int value = 0;  
 static void connectMQTTBrokerTask(void *args) {
-
   while (1) {
-    xSemaphoreTake(mutex2, portMAX_DELAY);
-
-    
-    vTaskDelay(15000 / portTICK_RATE_MS);
+    //xSemaphoreTake(mutex2, portMAX_DELAY);
+    publishMQTT(value);
+    value += 1;
+    //xSemaphoreGive(mutex2);
+    vTaskDelay(5000 / portTICK_RATE_MS);
   }
   
 }
@@ -340,9 +342,9 @@ void createTasks(void) {
   xTaskCreatePinnedToCore(updateActiveTimePlantsTask,"UpdateActiveTimePlants",2048,NULL,3,&updateActiveTimePlantsTaskHandler,1);
   xTaskCreatePinnedToCore(setMaxTemperatureUVATask,"SetMaxTempUVA",2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
   xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",2048,NULL,3,&lightSystemTaskHandler,1);
-  xTaskCreatePinnedToCore(drawWiFiMenuTask,"DrawWifiMenu",4096,NULL,4,&drawWiFiMenuTaskHandler,1);
-  xTaskCreatePinnedToCore(wifiScannerTask,"WifiScanner",4096,NULL,2,&wifiScannerTaskHandler,0);
-  xTaskCreatePinnedToCore(connectWiFiMenuTask,"ConnectWifi",4096,NULL,2,&connectWiFiTaskHandler,0);
-  //xTaskCreatePinnedToCore(connectMQTTBrokerTask,"ConnectMQTT",4096,NULL,3,&connectMQTTBrokerTaskHandler,0);
+  //xTaskCreatePinnedToCore(drawWiFiMenuTask,"DrawWifiMenu",4096,NULL,4,&drawWiFiMenuTaskHandler,1);
+  //xTaskCreatePinnedToCore(wifiScannerTask,"WifiScanner",4096,NULL,2,&wifiScannerTaskHandler,0);
+  //xTaskCreatePinnedToCore(connectWiFiMenuTask,"ConnectWifi",4096,NULL,2,&connectWiFiTaskHandler,0);
+  xTaskCreatePinnedToCore(connectMQTTBrokerTask,"ConnectMQTT",4096,NULL,3,&connectMQTTBrokerTaskHandler,0);
   
 }
