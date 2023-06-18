@@ -1,10 +1,18 @@
 #include "Devices/sensor.h"
 
-OneWire gpio_bus(8);
+/* Variables */
+OneWire gpio_bus(DS18B20s_GPIO);
 DallasTemperature ds18b20_sensors(&gpio_bus);
 DeviceAddress ds18b20_address;
-DHT dht_environment(DHT_PIN_1, DHT_TYPE);
-DHT dht_humid_hide(DHT_PIN_2, DHT_TYPE);
+DHT dht_environment(DHT_GPIO_1, DHT_TYPE);
+DHT dht_humid_hide(DHT_GPIO_2, DHT_TYPE);
+
+/* Functions */
+void configSensorsGPIO(void) {
+  pinMode(DS18B20s_GPIO, INPUT_PULLUP);
+  pinMode(DHT_GPIO_1, INPUT);
+  pinMode(DHT_GPIO_2, INPUT);
+}
 
 void prepareSensors() {
   ds18b20_sensors.begin();
@@ -12,7 +20,7 @@ void prepareSensors() {
   dht_humid_hide.begin();
 }
 
-float readTemperatures(const int index) {
+double readTemperatures(const int index) {
   ds18b20_sensors.getAddress(ds18b20_address , index);
   if (ds18b20_sensors.isConnected(ds18b20_address)) {
     ds18b20_sensors.requestTemperatures();
@@ -23,8 +31,8 @@ float readTemperatures(const int index) {
   }  
 }
 
-float readHumidHideTemp() {
-  float value = dht_humid_hide.readTemperature();
+double readHumidHideTemp() {
+  double value = dht_humid_hide.readTemperature();
   if (!isnan(value)) {
     return value;
   } else {
@@ -32,8 +40,8 @@ float readHumidHideTemp() {
   }
 }
 
-float readHumidHideHum() {
-  float value =  dht_humid_hide.readHumidity();
+double readHumidHideHum() {
+  double value =  dht_humid_hide.readHumidity();
   if (!isnan(value)) {
     return value;
   } else {
@@ -41,8 +49,8 @@ float readHumidHideHum() {
   }
 }
 
-float readEnvironmentTemp() {
-  float value = dht_environment.readTemperature();
+double readEnvironmentTemp() {
+  double value = dht_environment.readTemperature();
   if (!isnan(value)) {
     return value;
   } else {
@@ -50,8 +58,8 @@ float readEnvironmentTemp() {
   }
 }
 
-float readEnvironmentHum() {
-  float value = dht_environment.readHumidity();
+double readEnvironmentHum() {
+  double value = dht_environment.readHumidity();
   if (!isnan(value)) {
     return value;
   } else {

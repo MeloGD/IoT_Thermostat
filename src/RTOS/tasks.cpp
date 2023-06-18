@@ -1,7 +1,8 @@
 #include "RTOS/tasks.h"
 
+/* Variables */
 // Handlers
-//TaskHandle_t lvglHandler = NULL;
+TaskHandle_t lvglHandler = NULL;
 TaskHandle_t updateBrightnessTaskHandler = NULL;
 TaskHandle_t writeSensorsDataUITaskHandler = NULL;
 TaskHandle_t runClockUITaskHandler = NULL;
@@ -15,70 +16,137 @@ TaskHandle_t drawWiFiMenuTaskHandler = NULL;
 TaskHandle_t connectWiFiTaskHandler = NULL;
 TaskHandle_t connectMQTTBrokerTaskHandler = NULL;
 TaskHandle_t maintainMQTTTaskHandler = NULL;
-
 // Mutex
-static SemaphoreHandle_t mutex = NULL;
-static SemaphoreHandle_t mutex2 = NULL;
-// Array of arways containing their differents networks and their data
-WifiScanData wifi_data;
+SemaphoreHandle_t mutex = NULL;
+SemaphoreHandle_t mutex2 = NULL;
 
-/// Tasks ///
-// MCU lvgl UI orchestator
 
-void runUI (void *args) {
+/* Functions */
+void initUITask(void) {
+  xTaskCreatePinnedToCore(runUI ,"UITask",
+                          4096,NULL,1,&lvglHandler,1);
+}
+
+void createTasks(void) {
+  mutex = xSemaphoreCreateMutex();
+  mutex2 = xSemaphoreCreateMutex();
+  xTaskCreatePinnedToCore(updateScreenBrightnessTask, "UpdateScreenBrightnessTask",
+                          2048,NULL,1,&updateBrightnessTaskHandler,1);
+  xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",
+                          2048,NULL,3,&writeSensorsDataUITaskHandler,1);
+  xTaskCreatePinnedToCore(runClockUITask,"RunClockUITask",
+                          2048,NULL,2,&runClockUITaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimeUVATask,"UpdateActiveTimeUVA",
+                          2048,NULL,3,&updateActiveTimeUVATaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimeUVBTask,"UpdateActiveTimeUVB",
+                          2048,NULL,3,&updateActiveTimeUVBTaskHandler,1);
+  xTaskCreatePinnedToCore(updateActiveTimePlantsTask,"UpdateActiveTimePlants",
+                          2048,NULL,3,&updateActiveTimePlantsTaskHandler,1);
+  xTaskCreatePinnedToCore(setMaxTemperatureUVATask,"SetMaxTempUVA",
+                          2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
+  xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",
+                          2048,NULL,3,&lightSystemTaskHandler,1);
+  xTaskCreatePinnedToCore(connectMQTTBrokerTask,"ConnectMQTT",
+                          4096,NULL,3,&connectMQTTBrokerTaskHandler,0);
+  
+}
+
+// Calculates the reamaining time betweeen "on hour" and "off hour" 
+void getTimeDifference(char* hours_remaining, char* minutes_remaining, 
+                      const char* hour_1, const char* minute_1, 
+                      const char* hour_2, const char* minute_4) {
+    int hour_difference = 0, minute_difference = 0;
+    int on_hour = atoi(hour_1);
+    int on_minute = atoi(minute_1);
+    int off_hour = atoi(hour_2);
+    int off_minute = atoi(minute_4);
+    
+    if (on_hour == off_hour) {
+      if (on_minute > off_minute) {
+        hour_difference = 23;
+        minute_difference = 60 - (on_minute - off_minute);
+      } else if (on_minute == off_minute) {
+        minute_difference = 0;
+      } else {
+        minute_difference = off_minute - on_minute;
+      }
+    } else if (on_hour > off_hour ) {
+      hour_difference = 24 - (on_hour - off_hour);
+      if (on_minute > off_minute) {
+        minute_difference = 60 - (on_minute - off_minute);
+      } else if (on_minute == off_minute) {
+        minute_difference = 0;
+      } else {
+        minute_difference = off_minute - on_minute;
+      }
+    } else if (off_hour > on_hour) {
+      hour_difference =  off_hour - on_hour;
+      if (on_minute > off_minute) {
+        hour_difference--;
+        minute_difference = 60 - (on_minute - off_minute);
+      } else if (on_minute == off_minute) {
+        minute_difference = 0;
+      } else {
+        minute_difference = off_minute - on_minute;
+      }
+    }
+    sprintf(hours_remaining, "%02d", hour_difference);
+    sprintf(minutes_remaining, "%02d", minute_difference);
+};
+
+/* Tasks */
+static void runUI (void *args) {
   while (1) {
     lv_timer_handler();
     vTaskDelay(5 / portTICK_RATE_MS);
   }
 }
 
-
 // Brightness control
-int last_state = HIGH;
-int current_state;
-
 static void updateScreenBrightnessTask(void *args) {
+  int last_state = HIGH;
+  int current_state;
   while (1) {
-    current_state = digitalRead(16);
+    current_state = digitalRead(BUTTON_GPIO);
     if (last_state == HIGH && current_state == LOW ) {
       setDisplayBrightness(0);
       last_state = LOW;
-      //Serial.print("last_state = low");
     } else if (last_state == LOW && current_state == LOW) {
-      //display.setBrightness(255);
       setDisplayBrightness(255);
       last_state = HIGH;
-      //Serial.print("last_state = high");
     }
     vTaskDelay(140/portTICK_RATE_MS);
   }
 }
 
-// Write temps/humidity UI
+// Read&Write temps/humidity UI
 static void writeSensorsDataUITask(void *args) {
   float value;
   char formatted_value[8];
   prepareSensors();
   while (1) {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    warm_hide_temp = readTemperatures(0);
+    cold_hide_temp = readTemperatures(1);
+    environment_temp = readEnvironmentTemp();
+    environment_hum = readEnvironmentHum();
+    humid_hide_temp = readHumidHideTemp();
+    humid_hide_hum = readHumidHideHum();
     // Primer sensor DS18B20 - Cueva caliente
-    dtostrf((double)readTemperatures(0) , 5 , 2 , formatted_value);
+    dtostrf(warm_hide_temp , 5 , 2 , formatted_value);
     lv_label_set_text(ui_warmtemp, formatted_value);
     // Segundo sensor DS18B20 - Cueva fría
-    dtostrf((double)readTemperatures(1) , 5 , 2 , formatted_value);
+    dtostrf(cold_hide_temp , 5 , 2 , formatted_value);
     lv_label_set_text(ui_coldtemp , formatted_value);
     // Primer sensor AM2301 - Cueva húmeda
-    dtostrf((double)readHumidHideTemp(), 5 , 2 , formatted_value);
-    lv_label_set_text(ui_environmenttemp , formatted_value);
-    dtostrf((double)readHumidHideHum(), 5 , 2 , formatted_value);
-    lv_label_set_text(ui_environmentrelativehum , formatted_value); 
-    // Segundo sensor AM2301 - Entorno
-    dtostrf((double)readEnvironmentTemp() , 5 , 2 , formatted_value);
+    dtostrf(humid_hide_temp, 5 , 2 , formatted_value);
     lv_label_set_text(ui_moisttemp , formatted_value);
-    dtostrf((double)readEnvironmentHum() , 5 , 2 , formatted_value);
-    lv_label_set_text(ui_moistrelativehum , formatted_value);
-    //Serial.print("Sensors");
-    xSemaphoreGive(mutex);
+    dtostrf(humid_hide_hum, 5 , 2 , formatted_value);
+    lv_label_set_text(ui_moistrelativehum , formatted_value); 
+    // Segundo sensor AM2301 - Entorno
+    dtostrf(environment_temp , 5 , 2 , formatted_value);
+    lv_label_set_text( ui_environmenttemp, formatted_value);
+    dtostrf(environment_hum, 5 , 2 , formatted_value);
+    lv_label_set_text( ui_environmentrelativehum, formatted_value);
     
     vTaskDelay(100 / portTICK_RATE_MS);
   }
@@ -91,150 +159,97 @@ static void runClockUITask(void *args) {
   char format[] = "hh:mm";
   while (1) {
     strcpy(rtc_time, format);
-
     reportTime().toString(rtc_time);
-    
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    //xSemaphoreTake(mutex, portMAX_DELAY);
     lv_label_set_text(ui_clock , rtc_time);
-    xSemaphoreGive(mutex);
-    
+    //xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
 
-// Shows the difference betweeen, for example, "on hour" and "off hour"
-void getDifference(char* result1, char* result2, const char* number1, const char* number2, const char* number3, const char* number4) {
-    char hours_remaining[3], minutes_remaining[3];
-    int hour_difference = 0, minute_difference = 0;
-    // De array de chars a numeros
-    int hour1 = atoi(number1);
-    int minute_1 = atoi(number2);
-    int hour2 = atoi(number3);
-    int minute_2 = atoi(number4);
-    // Calculamos la diferencia y reportamos el resultado con sprintf 
-    if (hour1 == hour2) {
-      if (minute_1 > minute_2) {
-        hour_difference = 23;
-        minute_difference = 60 - (minute_1 - minute_2);
-      } else if (minute_1 == minute_2) {
-        minute_difference = 0;
-      } else {
-        minute_difference = minute_2 - minute_1;
-      }
-    } else if (hour1 > hour2 ) {
-      hour_difference = 24 - (hour1 - hour2);
-      if (minute_1 > minute_2) {
-        minute_difference = 60 - (minute_1 - minute_2);
-      } else if (minute_1 == minute_2) {
-        minute_difference = 0;
-      } else {
-        minute_difference = minute_2 - minute_1;
-      }
-    } else if (hour2 > hour1) {
-      hour_difference =  hour2 - hour1;
-      if (minute_1 > minute_2) {
-        hour_difference--;
-        minute_difference = 60 - (minute_1 - minute_2);
-      } else if (minute_1 == minute_2) {
-        minute_difference = 0;
-      } else {
-        minute_difference = minute_2 - minute_1;
-      }
-    }
-
-    sprintf(result1, "%02d", hour_difference);
-    sprintf(result2, "%02d", minute_difference);
-};
-
 static void updateActiveTimeUVATask(void *args) {
-  char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
-  char hours1[3], mins1[3], hours2[3], mins2[3]; 
-
+  char roller_option1[10], roller_option2[10], hours_remaining [10];
+  char minutes_remaining [10];
+  char on_hour[3], on_minutes[3], off_hours[3], off_minutes[3]; 
   while(1) {
     if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
         ui_screen4 != lv_scr_act() && ui_screen5 != lv_scr_act()) {
-      xSemaphoreTake(mutex, portMAX_DELAY);
+      //xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen3, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen3, roller_option2, 10);
-
-      hours1[0] = roller_option1[0];
-      hours1[1] = roller_option1[1];
-      hours2[0] = roller_option2[0];
-      hours2[1] = roller_option2[1];
-      mins1[0] = roller_option1[3];
-      mins1[1] = roller_option1[4];
-      mins2[0] = roller_option2[3];
-      mins2[1] = roller_option2[4];
-
-      getDifference(result1, result2, hours1, mins1, hours2, mins2);
-
-      lv_label_set_text(ui_hours3 , result1);
-      lv_label_set_text(ui_minutes3 , result2);
-      xSemaphoreGive(mutex);
+      on_hour[0] = roller_option1[0];
+      on_hour[1] = roller_option1[1];
+      off_hours[0] = roller_option2[0];
+      off_hours[1] = roller_option2[1];
+      on_minutes[0] = roller_option1[3];
+      on_minutes[1] = roller_option1[4];
+      off_minutes[0] = roller_option2[3];
+      off_minutes[1] = roller_option2[4];
+      getTimeDifference(hours_remaining, minutes_remaining, 
+                        on_hour, on_minutes, 
+                        off_hours, off_minutes);
+      lv_label_set_text(ui_hours3 , hours_remaining);
+      lv_label_set_text(ui_minutes3 , minutes_remaining);
+      //xSemaphoreGive(mutex);
     }
-    
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
 
 static void updateActiveTimeUVBTask(void *args) {
-  char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
-  char hours1[3], mins1[3], hours2[3], mins2[3]; 
-
+  char roller_option1[10], roller_option2[10], hours_remaining [10];
+  char minutes_remaining [10];
+  char on_hour[3], on_minutes[3], off_hours[3], off_minutes[3]; 
   while(1) {
     if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
         ui_screen3 != lv_scr_act() && ui_screen5 != lv_scr_act()) {
-      xSemaphoreTake(mutex, portMAX_DELAY);
+      //xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen4, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen4, roller_option2, 10);
-
-      hours1[0] = roller_option1[0];
-      hours1[1] = roller_option1[1];
-      hours2[0] = roller_option2[0];
-      hours2[1] = roller_option2[1];
-      mins1[0] = roller_option1[3];
-      mins1[1] = roller_option1[4];
-      mins2[0] = roller_option2[3];
-      mins2[1] = roller_option2[4];
-
-      getDifference(result1, result2, hours1, mins1, hours2, mins2);
-
-      lv_label_set_text(ui_hours4 , result1);
-      lv_label_set_text(ui_minutes4 , result2);
-      xSemaphoreGive(mutex);
+      on_hour[0] = roller_option1[0];
+      on_hour[1] = roller_option1[1];
+      off_hours[0] = roller_option2[0];
+      off_hours[1] = roller_option2[1];
+      on_minutes[0] = roller_option1[3];
+      on_minutes[1] = roller_option1[4];
+      off_minutes[0] = roller_option2[3];
+      off_minutes[1] = roller_option2[4];
+      getTimeDifference(hours_remaining, minutes_remaining,
+                        on_hour, on_minutes,
+                        off_hours, off_minutes);
+      lv_label_set_text(ui_hours4 , hours_remaining);
+      lv_label_set_text(ui_minutes4 , minutes_remaining);
+      //xSemaphoreGive(mutex);
     }
-    
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
 
 static void updateActiveTimePlantsTask(void *args) {
-  char roller_option1[10], roller_option2[10], result1 [10], result2 [10];
-  char hours1[3], mins1[3], hours2[3], mins2[3]; 
-
+  char roller_option1[10], roller_option2[10], hours_remaining [10];
+  char minutes_remaining [10];
+  char on_hour[3], on_minutes[3], off_hours[3], off_minutes[3]; 
   while(1) {
     if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
         ui_screen4 != lv_scr_act() && ui_screen3 != lv_scr_act()) {
-      xSemaphoreTake(mutex, portMAX_DELAY);
+      //xSemaphoreTake(mutex, portMAX_DELAY);
       lv_roller_get_selected_str(ui_onrollerscreen5, roller_option1, 10);
       lv_roller_get_selected_str(ui_offrollerscreen5, roller_option2, 10);
-
-      hours1[0] = roller_option1[0];
-      hours1[1] = roller_option1[1];
-      hours2[0] = roller_option2[0];
-      hours2[1] = roller_option2[1];
-      mins1[0] = roller_option1[3];
-      mins1[1] = roller_option1[4];
-      mins2[0] = roller_option2[3];
-      mins2[1] = roller_option2[4];
-
-      getDifference(result1, result2, hours1, mins1, hours2, mins2);
-
-      lv_label_set_text(ui_hours5 , result1);
-      lv_label_set_text(ui_minutes5 , result2);
-      xSemaphoreGive(mutex);
+      on_hour[0] = roller_option1[0];
+      on_hour[1] = roller_option1[1];
+      off_hours[0] = roller_option2[0];
+      off_hours[1] = roller_option2[1];
+      on_minutes[0] = roller_option1[3];
+      on_minutes[1] = roller_option1[4];
+      off_minutes[0] = roller_option2[3];
+      off_minutes[1] = roller_option2[4];
+      getTimeDifference(hours_remaining, minutes_remaining,
+                        on_hour, on_minutes, 
+                        off_hours, off_minutes);
+      lv_label_set_text(ui_hours5 , hours_remaining);
+      lv_label_set_text(ui_minutes5 , minutes_remaining);
+      //xSemaphoreGive(mutex);
     } 
-
     vTaskDelay(100 / portTICK_RATE_MS);
   }
 }
@@ -246,11 +261,11 @@ static void setMaxTemperatureUVATask(void *args) {
   while(1) {
     if (ui_screen1 != lv_scr_act() && ui_screen2 != lv_scr_act() &&
         ui_screen4 != lv_scr_act() && ui_screen5 != lv_scr_act()) { 
-      xSemaphoreTake(mutex, portMAX_DELAY);
+      //xSemaphoreTake(mutex, portMAX_DELAY);
       value = lv_slider_get_value(ui_tempslider3);
       sprintf(max_temp_slider_value, "%02d", value);
       lv_label_set_text(ui_targettemp3, max_temp_slider_value);
-      xSemaphoreGive(mutex);
+      //xSemaphoreGive(mutex);
     }
     vTaskDelay(100 / portTICK_RATE_MS);
   }
@@ -258,11 +273,11 @@ static void setMaxTemperatureUVATask(void *args) {
 
 // Lights handling
 static void controlLightsSystemTask(void *args) {
-  digitalWrite(UVA_RELAY_PIN, LOW);
-  digitalWrite(UVB_RELAY_PIN, LOW);
-  digitalWrite(PLANTS_RELAY_PIN, LOW);
+  digitalWrite(UVA_RELAY_GPIO, LOW);
+  digitalWrite(UVB_RELAY_GPIO, LOW);
+  digitalWrite(PLANTS_RELAY_GPIO, LOW);
   while (1) {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    //xSemaphoreTake(mutex, portMAX_DELAY);
     if (lv_obj_has_state(ui_uvaswitch, LV_STATE_CHECKED)) {
       switchUVARelay(0);
     } else {
@@ -278,8 +293,7 @@ static void controlLightsSystemTask(void *args) {
     } else {
       switchPlantsRelay(1);
     }
-    xSemaphoreGive(mutex);
-
+    //xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
   }
   
@@ -297,23 +311,18 @@ static void wifiScannerTask(void *args) {
 
 static void drawWiFiMenuTask(void *args) {
   while (1) {
-    xSemaphoreTake(mutex, portMAX_DELAY);
-    //xSemaphoreTake(mutex2, portMAX_DELAY);
-    
+    //xSemaphoreTake(mutex, portMAX_DELAY);
     drawWiFiMenu(wifi_data);
-
-    //xSemaphoreGive(mutex2);
-    xSemaphoreGive(mutex);
+    //xSemaphoreGive(mutex);
     vTaskDelay(100 / portTICK_RATE_MS);
     }
 }
 
 static void connectWiFiMenuTask(void *args) {
   while (1) {
-    xSemaphoreTake(mutex2, portMAX_DELAY);
+    //xSemaphoreTake(mutex2, portMAX_DELAY);
     connectWiFi();
-    xSemaphoreGive(mutex2);
-
+    //xSemaphoreGive(mutex2);
     vTaskDelay(5000 / portTICK_RATE_MS);
   }
 }
@@ -321,31 +330,16 @@ static void connectWiFiMenuTask(void *args) {
 int value = 0;  
 static void connectMQTTBrokerTask(void *args) {
   while (1) {
-    //xSemaphoreTake(mutex2, portMAX_DELAY);
-    publishMQTT(value);
-    value += 1;
-    //xSemaphoreGive(mutex2);
+    String publish_data = "";
+    StaticJsonDocument<300> json_data;
+    json_data["warm_hide_temp"] = warm_hide_temp;
+    json_data["cold_hide_temp"] = cold_hide_temp;  
+    json_data["environment_temp"] = environment_temp;
+    json_data["environment_humidity"] = environment_hum;
+    json_data["humid_hide_temp"] = humid_hide_temp;
+    json_data["humid_hide_humidity"] = humid_hide_hum;
+    serializeJson(json_data , publish_data);
+    mqtt_client.publish("iot-esp32/tfg", 0, true, (char*)publish_data.c_str());
     vTaskDelay(5000 / portTICK_RATE_MS);
   }
-  
-}
-
-
-void createTasks(void) {
-  mutex = xSemaphoreCreateMutex();
-  mutex2 = xSemaphoreCreateMutex();
-  //xTaskCreatePinnedToCore(runUI ,"UITask",4096,NULL,1,&lvglHandler,1);
-  xTaskCreatePinnedToCore(updateScreenBrightnessTask,"UpdateScreenBrightnessTask",2048,NULL,2,&updateBrightnessTaskHandler,1);
-  xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",2048,NULL,2,&writeSensorsDataUITaskHandler,1);
-  xTaskCreatePinnedToCore(runClockUITask,"RunClockUITask",2048,NULL,3,&runClockUITaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimeUVATask,"UpdateActiveTimeUVA",2048,NULL,3,&updateActiveTimeUVATaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimeUVBTask,"UpdateActiveTimeUVB",2048,NULL,3,&updateActiveTimeUVBTaskHandler,1);
-  xTaskCreatePinnedToCore(updateActiveTimePlantsTask,"UpdateActiveTimePlants",2048,NULL,3,&updateActiveTimePlantsTaskHandler,1);
-  xTaskCreatePinnedToCore(setMaxTemperatureUVATask,"SetMaxTempUVA",2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
-  xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",2048,NULL,3,&lightSystemTaskHandler,1);
-  //xTaskCreatePinnedToCore(drawWiFiMenuTask,"DrawWifiMenu",4096,NULL,4,&drawWiFiMenuTaskHandler,1);
-  //xTaskCreatePinnedToCore(wifiScannerTask,"WifiScanner",4096,NULL,2,&wifiScannerTaskHandler,0);
-  //xTaskCreatePinnedToCore(connectWiFiMenuTask,"ConnectWifi",4096,NULL,2,&connectWiFiTaskHandler,0);
-  xTaskCreatePinnedToCore(connectMQTTBrokerTask,"ConnectMQTT",4096,NULL,3,&connectMQTTBrokerTaskHandler,0);
-  
 }

@@ -1,5 +1,18 @@
 #include "Devices/networking.h"
 
+/* Variables */
+bool wifi_status = false;
+const ulong wifi_timeout = 10 * 1000;
+Preferences device_data;
+WifiScanData wifi_data;
+String payload;
+IPAddress MQTT_SERVER(5 , 75 , 186,  218);
+AsyncMqttClient mqtt_client;
+// Timers
+TimerHandle_t mqtt_reconnect_timer;
+TimerHandle_t wifi_reconnect_timer;
+
+/* Functions */
 WifiScanData getWiFiSSIDs(void) {
   WifiScanData wifi_data;
   int networks_number = WiFi.scanNetworks();
@@ -25,105 +38,39 @@ void initFlashMemmory(void) {
 
 void writeSSIDFlash(const char *ssid) {
   device_data.putString("SSID", ssid);
-  //device_data.end();
 }
 
 void writePasswordFlash(const char *password) {
   device_data.putString("PASSWORD", password);
-  //device_data.end();
 }
 
 const String readSSIDFlash(void) {
   const String ssid = device_data.getString("SSID", "");
-  //device_data.end();
   return ssid;
 }
 
 const String readPasswordFlash(void) {
   const String password = device_data.getString("PASSWORD", "");
-  //device_data.end();
   return password;
 }
 
 bool tryWiFi(const char *ssid, const char *password) {
+  const ulong start_time = millis();
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  
-  const ulong start_time = millis();
   WiFi.begin(ssid , password);
   while (WiFi.status() != WL_CONNECTED && (millis() - start_time) < wifi_timeout) {
     vTaskDelay(250 / portTICK_RATE_MS);
     Serial.print(".");
   }
-  
   if(WiFi.status() == WL_CONNECTED) {
     Serial.print("\nCONECTADO");
     writeSSIDFlash(ssid);
     writePasswordFlash(password);
-    WiFi.disconnect();
     return true;
   } else {
     Serial.print("\nNO CONECTADO");
-    WiFi.disconnect();
     return false;
-  }
-}
-
-
-/*
-void connectWiFi(void) { 
-  WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
-  // INTEGRAR waitForConnect.... dentro del if,así borro los serial
-  if ( WiFi.waitForConnectResult(1000) == WL_CONNECTED) {
-    lv_obj_add_state(ui_wifiswitch, LV_STATE_CHECKED);
-    Serial.println("Conectado al punto de acceso WiFi");
-
-  } else {
-      WiFi.disconnect(true);
-      lv_obj_clear_state(ui_wifiswitch, LV_STATE_CHECKED);
-      Serial.println("Se ha perdido conexión con el acceso WiFi");
-  }  
-}
-*/
-
-AsyncMqttClient mqtt_client;
-IPAddress MQTT_SERVER(5 , 75 , 186,  218);
-
-TimerHandle_t mqtt_reconnect_timer;
-TimerHandle_t wifi_reconnect_timer;
-
-const char* ssid = "Azotea";
-const char* password = "@968CasA";
-
-String payload;
-
-
-void connectWiFi(void) {
-  Serial.println("Entrando al WiFi.");
-  WiFi.disconnect();
-  WiFi.mode(WIFI_STA);
-  Serial.println("Número de redes disponibles: ");
-  Serial.print(WiFi.scanNetworks());
-  //String ssid2 = WiFi.SSID(0);
-
-  //WiFi.begin(ssid, password);
-  WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
-  while (WiFi.status() != WL_CONNECTED) { 
-     delay(100);  
-     Serial.print('.'); 
-  }
-  
-  Serial.println("Conexión establecida.");
-  Serial.println("IP:");
-  Serial.println(WiFi.localIP());
-
-}
-
-void plsWiFiWork(void) {
-  WiFi.getAutoReconnect();
-  while (WiFi.status() != WL_CONNECTED) { 
-     delay(100);  
-     Serial.print('.'); 
   }
 }
 
@@ -144,17 +91,50 @@ void wifiEvent(WiFiEvent_t event) {
   }
 }
 
-void configMQTT(void) {
-  mqtt_reconnect_timer = xTimerCreate("MQTTTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectMQTT));
-  wifi_reconnect_timer = xTimerCreate("WiFiTimer", pdMS_TO_TICKS(5000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(plsWiFiWork));
+void connectWiFi(void) {
+  Serial.println("Entrando al WiFi.");
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+  Serial.println("Número de redes disponibles: ");
+  Serial.print(WiFi.scanNetworks());
+  WiFi.begin(readSSIDFlash().c_str(), readPasswordFlash().c_str());
+  while (WiFi.status() != WL_CONNECTED) { 
+     delay(100);  
+     Serial.print('.'); 
+  }
+  Serial.println("Conexión establecida.");
+  Serial.println("IP:");
+  Serial.println(WiFi.localIP());
 
+}
+
+void wifiReconnect(void) {
+  WiFi.getAutoReconnect();
+  while (WiFi.status() != WL_CONNECTED) { 
+     delay(100);  
+     Serial.print('.'); 
+  }
+}
+
+void configMQTT(void) {
+  mqtt_reconnect_timer = xTimerCreate("MQTTTimer",
+                                      pdMS_TO_TICKS(2000),
+                                      pdFALSE,
+                                      (void*)0,
+                                      reinterpret_cast<TimerCallbackFunction_t>(connectMQTT)
+                                      );
+  wifi_reconnect_timer = xTimerCreate("WiFiTimer",
+                                      pdMS_TO_TICKS(5000),
+                                      pdFALSE,
+                                      (void*)0,
+                                      reinterpret_cast<TimerCallbackFunction_t>(wifiReconnect)
+                                      );
   mqtt_client.onConnect(onMQTTConnect);
   mqtt_client.onDisconnect(onMQTTDisconnect);
   mqtt_client.onSubscribe(onMQTTSubscribe);
   mqtt_client.onUnsubscribe(onMQTTUnsubscribe);
   mqtt_client.onMessage(onMQTTReceived);
   mqtt_client.onPublish(onMQTTPublish);
-
   mqtt_client.setServer( MQTT_SERVER , 30000);
 }
 
@@ -193,8 +173,18 @@ void onMQTTReceived(char* topic, char* payload, AsyncMqttClientMessageProperties
   Serial.println("Topico recibido: ");
   Serial.println(topic);
   Serial.print(" : ");
+
   String content = getPayloadContent(payload, len);
-  Serial.print(content);
+  
+  StaticJsonDocument<300> received;
+  DeserializationError error = deserializeJson(received, content);
+  if (error) {
+    Serial.println("ERROR!");
+    return; 
+  }
+  
+  float data = received["environment_temp"];
+  Serial.print(data);
   Serial.println();
 }
 
@@ -206,11 +196,11 @@ void onMQTTPublish(uint16_t packet_id) {
 
 void publishMQTT(unsigned long data) {
   payload = String(data);
-  mqtt_client.publish("hola/mundo", 0, true, (char*)payload.c_str());
+  mqtt_client.publish("iot-esp32/tfg", 0, true, (char*)payload.c_str());
 }
 
 void subscribeMQTT(void) {
-  uint16_t packetIdSub = mqtt_client.subscribe("hola/mundo", 0);
+  uint16_t packetIdSub = mqtt_client.subscribe("iot-esp32/tfg", 0);
   Serial.print("Subscrito a QoS 0, id del paquete: ");
   Serial.println(packetIdSub);
 }

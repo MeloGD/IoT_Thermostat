@@ -34,7 +34,6 @@ extern lv_obj_t *ui_topbartitlescreen1;
 extern lv_obj_t *ui_clock;
 extern lv_obj_t *ui_wifiswitch;
 extern lv_obj_t *ui_wifitext;
-//extern lv_obj_t *ui_wifisettingsbutton;
 extern lv_obj_t *ui_textmenuscreen1;
 extern lv_obj_t *ui_environmenttemp;
 extern lv_obj_t *ui_warmtemp;
@@ -113,11 +112,6 @@ extern lv_obj_t *ui_hours5;
 extern lv_obj_t *ui_timetext5;
 extern lv_obj_t *ui_minutes5;
 extern lv_obj_t *ui____initial_actions0;
-
-
-
-
-
 
 void ui_init(void);
 

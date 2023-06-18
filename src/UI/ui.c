@@ -16,7 +16,6 @@ lv_obj_t *ui_topbartitlescreen1;
 lv_obj_t *ui_clock;
 lv_obj_t *ui_wifiswitch;
 lv_obj_t *ui_wifitext;
-//lv_obj_t *ui_wifisettingsbutton;
 lv_obj_t *ui_textmenuscreen1;
 lv_obj_t *ui_environmenttemp;
 lv_obj_t *ui_warmtemp;
@@ -30,7 +29,6 @@ lv_obj_t *ui_reportwifimessagebox;
 lv_obj_t *ui_wifikeyboard;
 lv_obj_t *ui_wifipasswordarea;
 void ui_event_nextbuttonscreen1( lv_event_t * e);
-//void ui_event_settingspopupwifiwindow( lv_event_t * e);
 lv_obj_t *ui_nextbuttonscreen1;
 lv_obj_t *ui_nextbuttontextscreen1;
 lv_obj_t *ui_screen2;
@@ -204,21 +202,12 @@ lv_obj_set_style_text_opa(ui_loadingscreenssid, 255, LV_PART_MAIN| LV_STATE_DEFA
 
 // WiFi Menu
 ui_wifilist = lv_list_create(ui_loadingscreen);
-//lv_obj_add_flag( ui_wifilist,  LV_OBJ_FLAG_HIDDEN);
 lv_obj_set_size(ui_wifilist, 400 , 200);
 lv_obj_set_pos(ui_wifilist, 45, 90);
-//lv_obj_center(ui_wifilist);
-
 ui_wifilistoptions = lv_obj_create(NULL);
-
 ui_reportwifimessagebox = lv_obj_create(NULL);
-
 ui_wifikeyboard = lv_obj_create(NULL);
-
 ui_wifipasswordarea = lv_obj_create(NULL);
-
-
-
 }
 void ui_screen1_screen_init(void)
 {
