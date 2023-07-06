@@ -23,9 +23,6 @@ extern TaskHandle_t drawWiFiMenuTaskHandler;
 extern TaskHandle_t connectWiFiTaskHandler;
 extern TaskHandle_t connectMQTTBrokerTaskHandler;
 extern TaskHandle_t maintainMQTTTaskHandler;
-//Mutex
-extern SemaphoreHandle_t mutex;
-extern SemaphoreHandle_t mutex2;
 
 /* Functions */
 void initUITask(void);
@@ -33,6 +30,7 @@ void createTasks(void);
 void getTimeDifference(char* hours_remaining, char* minutes_remaining,
                       const char* hour1, const char* minute_1,
                       const char* hour2, const char* minute_2);
+void getUIRollerTime(const char* roller_time, char* on_hour, char* on_minutes);
 // Tasks functions
 static void runUI (void *args);
 static void updateScreenBrightnessTask(void *args);

@@ -14,10 +14,19 @@ void configSensorsGPIO(void) {
   pinMode(DHT_GPIO_2, INPUT);
 }
 
-void prepareSensors() {
+void prepareSensors(void) {
   ds18b20_sensors.begin();
   dht_environment.begin();
   dht_humid_hide.begin();
+}
+
+bool isTemperatureSensorConnected(const int index) {
+  ds18b20_sensors.getAddress(ds18b20_address , index);
+  if (ds18b20_sensors.isConnected(ds18b20_address)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 double readTemperatures(const int index) {

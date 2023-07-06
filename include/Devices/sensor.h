@@ -24,7 +24,8 @@ static double humid_hide_hum;
 
 /* Functions */
 void configSensorsGPIO(void);
-void prepareSensors();
+void prepareSensors(void);
+bool isTemperatureSensorConnected(const int index);
 double readTemperatures(const int index);
 double readHumidHideTemp(void); 
 double readHumidHideHum(void); 

@@ -3,6 +3,8 @@
 RTC_DS3231 rtc;
 TwoWire i2c_rtc = TwoWire(1);
 
+
+
 void configRTC(void) {
   i2c_rtc.begin(RTC_SDA , RTC_SCL, 100000);
   bool status = rtc.begin(&i2c_rtc);

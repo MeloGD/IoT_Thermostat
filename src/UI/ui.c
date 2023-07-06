@@ -531,6 +531,7 @@ lv_obj_set_style_border_opa(ui_uvaswitch, 255, LV_PART_KNOB| LV_STATE_DEFAULT);
 lv_obj_set_style_border_width(ui_uvaswitch, 1, LV_PART_KNOB| LV_STATE_DEFAULT);
 lv_obj_set_style_border_color(ui_uvaswitch, lv_color_hex(0x000000), LV_PART_KNOB | LV_STATE_CHECKED );
 lv_obj_set_style_border_opa(ui_uvaswitch, 255, LV_PART_KNOB| LV_STATE_CHECKED);
+lv_obj_clear_flag(ui_uvaswitch,  LV_OBJ_FLAG_CLICKABLE);
 
 ui_uvbswitch = lv_switch_create(ui_screen2);
 lv_obj_set_width( ui_uvbswitch, 50);
@@ -561,6 +562,7 @@ lv_obj_set_style_border_opa(ui_uvbswitch, 255, LV_PART_KNOB| LV_STATE_DEFAULT);
 lv_obj_set_style_border_width(ui_uvbswitch, 1, LV_PART_KNOB| LV_STATE_DEFAULT);
 lv_obj_set_style_border_color(ui_uvbswitch, lv_color_hex(0x000000), LV_PART_KNOB | LV_STATE_CHECKED );
 lv_obj_set_style_border_opa(ui_uvbswitch, 255, LV_PART_KNOB| LV_STATE_CHECKED);
+lv_obj_clear_flag(ui_uvbswitch,  LV_OBJ_FLAG_CLICKABLE);
 
 ui_plantsswitch = lv_switch_create(ui_screen2);
 lv_obj_set_width( ui_plantsswitch, 50);
@@ -591,6 +593,7 @@ lv_obj_set_style_border_opa(ui_plantsswitch, 255, LV_PART_KNOB| LV_STATE_DEFAULT
 lv_obj_set_style_border_width(ui_plantsswitch, 1, LV_PART_KNOB| LV_STATE_DEFAULT);
 lv_obj_set_style_border_color(ui_plantsswitch, lv_color_hex(0x000000), LV_PART_KNOB | LV_STATE_CHECKED );
 lv_obj_set_style_border_opa(ui_plantsswitch, 255, LV_PART_KNOB| LV_STATE_CHECKED);
+lv_obj_clear_flag(ui_plantsswitch,  LV_OBJ_FLAG_CLICKABLE);
 
 ui_gouvabutton = lv_btn_create(ui_screen2);
 lv_obj_set_width( ui_gouvabutton, 67);

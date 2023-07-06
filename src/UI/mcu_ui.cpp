@@ -24,12 +24,12 @@ void drawStartWiFiMenuScreen(void) {
   wifi_data = getWiFiSSIDs();
   String ssid = readSSIDFlash();
   lv_label_set_text(ui_loadingscreenssid, ssid.c_str());
-  while (lv_scr_act() == ui_loadingscreen) {
-    delay(200);
+  const ulong start_time = millis();
+  while (lv_scr_act() == ui_loadingscreen && (millis() - start_time) < 20000) {
     drawWiFiMenu(wifi_data);
-    delay(100);
   }
   lv_obj_clean(ui_loadingscreen);
+  _ui_screen_change( ui_screen1, LV_SCR_LOAD_ANIM_NONE, 0, 0);
 }
 
 void drawDisplay(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p) {
