@@ -1,6 +1,5 @@
 #include "RTOS/tasks.h"
 
-/* Variables */
 // Handlers
 TaskHandle_t lvglHandler = NULL;
 TaskHandle_t updateBrightnessTaskHandler = NULL;
@@ -13,9 +12,7 @@ TaskHandle_t setMaxTemperatureUVATaskHandler = NULL;
 TaskHandle_t lightSystemTaskHandler = NULL;
 TaskHandle_t wifiScannerTaskHandler = NULL;
 TaskHandle_t drawWiFiMenuTaskHandler = NULL;
-TaskHandle_t connectWiFiTaskHandler = NULL;
-TaskHandle_t connectMQTTBrokerTaskHandler = NULL;
-TaskHandle_t maintainMQTTTaskHandler = NULL;
+TaskHandle_t publishMQTTBrokerTaskHandler = NULL;
 
 /* Functions */
 void initUITask(void) {
@@ -24,7 +21,6 @@ void initUITask(void) {
 }
 
 void createTasks(void) {
-  //probar a subir la prioridad de esta tarea a 4
   xTaskCreatePinnedToCore(updateScreenBrightnessTask, "UpdateScreenBrightnessTask",
                           2048,NULL,1,&updateBrightnessTaskHandler,1);
   xTaskCreatePinnedToCore(writeSensorsDataUITask,"UpdateDataUITask",
@@ -41,20 +37,20 @@ void createTasks(void) {
                           2048,NULL,3,&setMaxTemperatureUVATaskHandler,1);
   xTaskCreatePinnedToCore(controlLightsSystemTask,"ControlLightsSystem",
                           2048,NULL,3,&lightSystemTaskHandler,1);
-  xTaskCreatePinnedToCore(connectMQTTBrokerTask,"ConnectMQTT",
-                          4096,NULL,3,&connectMQTTBrokerTaskHandler,0);
+  xTaskCreatePinnedToCore(publishMQTTBrokerTask,"ConnectMQTT",
+                          4096,NULL,3,&publishMQTTBrokerTaskHandler,0);
   
 }
 
 // Calculates the reamaining time betweeen "on hour" and "off hour" 
 void getTimeDifference(char* hours_remaining, char* minutes_remaining, 
-                      const char* hour_1, const char* minute_1, 
-                      const char* hour_2, const char* minute_4) {
+                      const char* start_hour, const char* start_minute, 
+                      const char* finish_hour, const char* finish_minute) {
     int hour_difference = 0, minute_difference = 0;
-    int on_hour = atoi(hour_1);
-    int on_minute = atoi(minute_1);
-    int off_hour = atoi(hour_2);
-    int off_minute = atoi(minute_4);
+    int on_hour = atoi(start_hour);
+    int on_minute = atoi(start_minute);
+    int off_hour = atoi(finish_hour);
+    int off_minute = atoi(finish_minute);
     
     if (on_hour == off_hour) {
       if (on_minute > off_minute) {
@@ -89,11 +85,11 @@ void getTimeDifference(char* hours_remaining, char* minutes_remaining,
     sprintf(minutes_remaining, "%02d", minute_difference);
 }
 
-void getUIRollerTime(const char* roller_time, char* on_hour, char* on_minutes) {
-  on_hour[0] = roller_time[0];
-  on_hour[1] = roller_time[1];
-  on_minutes[0] = roller_time[3];
-  on_minutes[1] = roller_time[4];
+void getUIRollerTime(const char* roller_time, char* hour, char* minutes) {
+  hour[0] = roller_time[0];
+  hour[1] = roller_time[1];
+  minutes[0] = roller_time[3];
+  minutes[1] = roller_time[4];
 }
 
 
@@ -315,15 +311,7 @@ static void drawWiFiMenuTask(void *args) {
     }
 }
 
-static void connectWiFiMenuTask(void *args) {
-  while (1) {
-    connectWiFi();
-    vTaskDelay(5000 / portTICK_RATE_MS);
-  }
-}
-
-int value = 0;  
-static void connectMQTTBrokerTask(void *args) {
+static void publishMQTTBrokerTask(void *args) {
   while (1) {
     String publish_data = "";
     StaticJsonDocument<300> json_data;

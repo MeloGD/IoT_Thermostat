@@ -3,8 +3,8 @@
 
 /* Variables */
 // Menu management variables
-bool eeprom_message_box_drawn = false;
-bool eeprom_message_box_requested = false;
+bool flash_message_box_drawn = false;
+bool flash_message_box_requested = false;
 bool credentials_message_box_drawn = false;
 bool credentials_message_box_requested = false;
 int current_found_networks = 0;
@@ -88,24 +88,24 @@ void setDisplayBrightness(const uint8_t value) {
 }
 
 // WiFi Start Screen Menu Management
-void drawCleanEEPROMMessageBox(void) {
+void drawCleanFlashMessageBox(void) {
   const char text[] = { "Por favor, confirme el procedimiento." }; 
   static const char* options[] = {"Aceptar", "Rechazar", ""}; 
   if (ui_reportwifimessagebox != NULL) {
-    if (!eeprom_message_box_drawn) {
+    if (!flash_message_box_drawn) {
       ui_reportwifimessagebox = lv_msgbox_create(NULL, "'Borrar red actual'", text, options, false);
       lv_obj_center(ui_reportwifimessagebox);
-      eeprom_message_box_drawn = true;
+      flash_message_box_drawn = true;
     }
     if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 0) {
       writeSSIDFlash("");
       writePasswordFlash("");
-      eeprom_message_box_requested = false;
-      eeprom_message_box_drawn = false;
+      flash_message_box_requested = false;
+      flash_message_box_drawn = false;
       lv_msgbox_close(ui_reportwifimessagebox);
     } else if (lv_msgbox_get_active_btn(ui_reportwifimessagebox) == 1) {
-      eeprom_message_box_requested = false;
-      eeprom_message_box_drawn = false;
+      flash_message_box_requested = false;
+      flash_message_box_drawn = false;
       lv_msgbox_close(ui_reportwifimessagebox);
     }
   }  
@@ -153,11 +153,11 @@ void uiEventCloseWiFiWindow( lv_event_t * e) {
   }
 }
 
-void uiEventCleanEEPROM( lv_event_t * e) {
+void uiEventCleanFlash( lv_event_t * e) {
   lv_event_code_t event_code = lv_event_get_code(e);
   lv_obj_t * target = lv_event_get_target(e);
   if (event_code == LV_EVENT_CLICKED) {
-    eeprom_message_box_requested = true;
+    flash_message_box_requested = true;
     lv_label_set_text(ui_loadingscreenssid, "");
   }
 }
@@ -178,7 +178,7 @@ void drawWiFiMenu(WifiScanData wifi_data) {
       lv_obj_clean(ui_wifilist);
       lv_list_add_text(ui_wifilist, "Opciones");
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_TRASH, "Borrar red actual");
-      lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanEEPROM, LV_EVENT_ALL, NULL);
+      lv_obj_add_event_cb(ui_wifilistoptions, uiEventCleanFlash, LV_EVENT_ALL, NULL);
       ui_wifilistoptions = lv_list_add_btn(ui_wifilist, LV_SYMBOL_CLOSE, "Continuar con los ajustes actuales");
       lv_obj_add_event_cb(ui_wifilistoptions, uiEventCloseWiFiWindow, LV_EVENT_ALL, NULL);
       lv_list_add_text(ui_wifilist, "Redes disponibles");
@@ -188,8 +188,8 @@ void drawWiFiMenu(WifiScanData wifi_data) {
       }
       last_found_networks = current_found_networks;
     }
-    if (eeprom_message_box_requested) {
-      drawCleanEEPROMMessageBox();
+    if (flash_message_box_requested) {
+      drawCleanFlashMessageBox();
     } else if (credentials_message_box_requested) {
       drawCredentialsMessageBox();
     }
