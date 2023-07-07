@@ -1,6 +1,13 @@
-/*!
- * FT6236.h
- */
+/**
+ * @brief Fichero que contiene la clase que configura el driver del panel táctil. Todos los
+ * valores de este fichero son estáticos para funcionar con el modelo FT6236 de Focaltech.
+ * Lo único que se ha añadido han sido los pines del bus I2C, que se comentan más abajo.
+ * Documentación de la librería: 
+ * https://github.com/DustinWatts/FT6236/tree/main
+ * @file ft6236.h
+ * @author Jesús Carmelo González Domínguez
+ * @date 14-07-2023
+*/
 
 #ifndef FT6236_GUARD
 #define FT6236_GUARD
@@ -32,7 +39,19 @@
 
 #define FT6236_DEFAULT_THRESHOLD 128 // Default threshold for touch detection
 
+/**
+ * @brief Pin SDA asignado al panel táctil. Se obtuvo mirando los schematics de la placa
+ * de desarrollo: 
+ * https://github.com/Makerfabs/Makerfabs-ESP32-S3-SPI-TFT-with-Touch/blob/main/hardware/ESP32-S3%20TFT%20Touch%20v1.1(3.5''%20ili9488).PDF
+ * 
+*/ 
 #define SDA_FT6236 38
+/**
+ * @brief Pin SCL asignado al panel táctil. Se obtuvo mirando los schematics de la placa
+ * de desarrollo: 
+ * https://github.com/Makerfabs/Makerfabs-ESP32-S3-SPI-TFT-with-Touch/blob/main/hardware/ESP32-S3%20TFT%20Touch%20v1.1(3.5''%20ili9488).PDF
+ * 
+*/ 
 #define SCL_FT6236 39
 
 

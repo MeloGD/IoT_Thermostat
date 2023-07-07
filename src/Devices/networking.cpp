@@ -1,8 +1,7 @@
 #include "Devices/networking.h"
 
 /* Variables */
-bool wifi_status = false;
-const ulong wifi_timeout = 10 * 1000;
+const ulong wifi_timeout = 10000;
 Preferences device_data;
 WifiScanData wifi_data;
 String payload;
@@ -194,14 +193,9 @@ void onMQTTPublish(uint16_t packet_id) {
   Serial.println(packet_id);
 }
 
-void publishMQTT(unsigned long data) {
-  payload = String(data);
-  mqtt_client.publish("iot-esp32/tfg", 0, true, (char*)payload.c_str());
-}
-
 void subscribeMQTT(void) {
   uint16_t packetIdSub = mqtt_client.subscribe("iot-esp32/tfg", 0);
-  Serial.print("Subscrito a QoS 0, id del paquete: ");
+  Serial.print("Suscrito a QoS 0, id del paquete: ");
   Serial.println(packetIdSub);
 }
 

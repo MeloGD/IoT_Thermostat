@@ -1,3 +1,13 @@
+/**
+ * @brief Fichero que contiene la clase que configura el driver del panel LCD con
+ * driver ILI988.
+ * Documentación de la librería:
+ * https://github.com/lovyan03/LovyanGFX/tree/master
+ * @file display.h
+ * @author Jesús Carmelo González Domínguez
+ * @date 14-07-2023
+*/
+
 #ifndef DISPLAY_GUARD
 #define DISPLAY_GUARD
 
@@ -44,8 +54,9 @@ class Display : public lgfx::LGFX_Device {
         cfg.readable         = true;  
         cfg.invert           = false;  
         cfg.rgb_order        = false;  
-        cfg.dlen_16bit       = false;  // Probar si funciona el modo color 16 bits
-        cfg.bus_shared       = true;   // True, el bus está compartido con la SD -> PREGUNTAR A JONAY, POR SI ACASO
+        cfg.dlen_16bit       = false;  
+        //Ya que el bus está compartido con la SD.
+        cfg.bus_shared       = true;   
         // Carga la configuración para preparar el panel LCD
         _panel_instance.config(cfg);
       }

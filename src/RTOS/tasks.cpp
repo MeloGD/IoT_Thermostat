@@ -269,7 +269,6 @@ static void controlLightsSystemTask(void *args) {
   char on_hours_uva[3], on_minutes_uva[3], off_hours_uva[3], off_minutes_uva[3]; 
   char on_hours_uvb[3], on_minutes_uvb[3], off_hours_uvb[3], off_minutes_uvb[3]; 
   char on_hour_plants[3], on_minutes_plants[3], off_hours_plants[3], off_minutes_plants[3]; 
-  digitalWrite(UVA_RELAY_GPIO, LOW);
   digitalWrite(UVB_RELAY_GPIO, LOW);
   digitalWrite(PLANTS_RELAY_GPIO, LOW);
   while (1) {
