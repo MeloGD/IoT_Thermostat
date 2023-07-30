@@ -23,14 +23,14 @@ https://github.com/Makerfabs/Makerfabs-ESP32-S3-SPI-TFT-with-Touch
 ## English  
 Last university project.
 
-In this resository you will find the code for a microcontroller used for an IoT device, more 
+In this resository you will find the code written for an IoT device, more 
 specifically, a thermostat that gathers temperature/humidity data and manages the particular
 environment requirments from a certain terrarium. All of this was possible thanks to a developer
 board that integrates the ESP32-S3 microcontroller.
 
 This thermostat uses the MQTT protocol in order to connect/communicate to a server which uses
 Traefik as a proxy, Mosquitto as a broker, NodeRED as a data manager, InfluxDB as a BBDD and 
-finally Grafana for the data visualization. All of this tools where deployed using Docker.
+finally Grafana for the data visualization. All of this tools were deployed using Docker.
 
 In the "Docs" folder you will find some docummentation about how this project was made, written
 in spanish. 
