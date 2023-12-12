@@ -1,0 +1,408 @@
+[
+    {
+        "id": "99abd12b71554e5d",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "2f092830acf42821",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "iot_stack_tfg_mosquitto_1",
+        "port": "1883",
+        "clientid": "Node-RED",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "eddd1aa60560b734",
+        "type": "mqtt-broker",
+        "name": "v2",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "dfd0b36083a56c12",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "TFG_ULL",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "rejectUnauthorized": false
+    },
+    {
+        "id": "b97cb3017801bfed",
+        "type": "mqtt in",
+        "z": "99abd12b71554e5d",
+        "name": "ESP32_TFG",
+        "topic": "iot-esp32/tfg",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "2f092830acf42821",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 370,
+        "y": 380,
+        "wires": [
+            [
+                "ad48611c03feb8c2"
+            ]
+        ]
+    },
+    {
+        "id": "4aa3c33c05fdb9dd",
+        "type": "debug",
+        "z": "99abd12b71554e5d",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "ee30f62c88026992",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Warm_Hide_Temperature",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "ad48611c03feb8c2",
+        "type": "json",
+        "z": "99abd12b71554e5d",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 630,
+        "y": 380,
+        "wires": [
+            [
+                "4aa3c33c05fdb9dd",
+                "0554b96541c1389b",
+                "f218a1c928b52838",
+                "35371533b44820df",
+                "df2c658e4a3f8df1",
+                "3589680519996275",
+                "90c58d8af0813f6c"
+            ]
+        ]
+    },
+    {
+        "id": "0554b96541c1389b",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_WarmHideTemp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 500,
+        "wires": [
+            [
+                "ee30f62c88026992"
+            ]
+        ]
+    },
+    {
+        "id": "f218a1c928b52838",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_ColdHideTemp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 580,
+        "wires": [
+            [
+                "910ad923a7429360"
+            ]
+        ]
+    },
+    {
+        "id": "910ad923a7429360",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Cold_Hide_Temperature",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "35371533b44820df",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_EnvironmentTemp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 900,
+        "y": 640,
+        "wires": [
+            [
+                "6a9c1c78def94799"
+            ]
+        ]
+    },
+    {
+        "id": "6a9c1c78def94799",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Environment_Temperature",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "df2c658e4a3f8df1",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_EnvironmentHum",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 900,
+        "y": 700,
+        "wires": [
+            [
+                "231fc21975e91251"
+            ]
+        ]
+    },
+    {
+        "id": "231fc21975e91251",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Environment_Humidity",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "3589680519996275",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_HumidHideTemp",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 760,
+        "wires": [
+            [
+                "a3673bdd72ee7694"
+            ]
+        ]
+    },
+    {
+        "id": "a3673bdd72ee7694",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Humid_Hide_Temperature",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "90c58d8af0813f6c",
+        "type": "change",
+        "z": "99abd12b71554e5d",
+        "name": "Payload_HumidHideHum",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "payload.warm_hide_temp",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 890,
+        "y": 820,
+        "wires": [
+            [
+                "6353001b65d065cf"
+            ]
+        ]
+    },
+    {
+        "id": "6353001b65d065cf",
+        "type": "influxdb out",
+        "z": "99abd12b71554e5d",
+        "influxdb": "dfd0b36083a56c12",
+        "name": "InfluxDB2",
+        "measurement": "Humid_Hide_Humidity",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "ULL",
+        "bucket": "IOT-TFG-ULL",
+        "x": 1140,
+        "y": 820,
+        "wires": []
+    }
+]

@@ -1,0 +1,118 @@
+version: "3.3"
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    networks:
+      - iot-network
+    ports: 
+      - 30000:1883
+      - 30001:9001
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  nodered:
+    image: nodered/node-red
+    container_name: nodered
+    #user: "1000"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy-network
+      - iot-network
+    volumes:
+      - ./nodered/data:/data 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nodered.entrypoints=http"
+      - "traefik.http.routers.nodered.rule=Host(`nodered.tfg-ull.cloud`)"
+      - "traefik.http.middlewares.nodered-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.nodered.middlewares=nodered-https-redirect"
+      - "traefik.http.routers.nodered-secure.entrypoints=https"
+      - "traefik.http.routers.nodered-secure.rule=Host(`nodered.tfg-ull.cloud`)"
+      - "traefik.http.routers.nodered-secure.tls=true"
+      - "traefik.http.routers.nodered-secure.service=nodered"
+      - "traefik.http.services.nodered.loadbalancer.server.port=1880"
+      - "traefik.docker.network=proxy-network"
+
+  influx:
+    image: influxdb
+    container_name: influxdb
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy-network
+      - iot-network
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2
+      - ./influxdb/config:/etc/influxdb2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.influx.entrypoints=http"
+      - "traefik.http.routers.influx.rule=Host(`influx.tfg-ull.cloud`)"
+      - "traefik.http.middlewares.influx-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.influx.middlewares=influx-https-redirect"
+      - "traefik.http.routers.influx-secure.entrypoints=https"
+      - "traefik.http.routers.influx-secure.rule=Host(`influx.tfg-ull.cloud`)"
+      - "traefik.http.routers.influx-secure.tls=true"
+      - "traefik.http.routers.influx-secure.service=influx"
+      - "traefik.http.services.influx.loadbalancer.server.port=8086"
+      - "traefik.docker.network=proxy-network"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    # uid 0 para que el usuario dentro de grafana pueda
+    # escribir dentro del volumen
+    #probar con uid 1000 que es el mismo que el de iot
+    security_opt:
+      - no-new-privileges:true
+    user: "1000"
+    networks:
+      - proxy-network
+      - iot-network
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.tfg-ull.cloud`)"
+      - "traefik.http.middlewares.grafana-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.grafana.middlewares=grafana-https-redirect"
+      - "traefik.http.routers.grafana-secure.entrypoints=https"
+      - "traefik.http.routers.grafana-secure.rule=Host(`grafana.tfg-ull.cloud`)"
+      - "traefik.http.routers.grafana-secure.tls=true"
+      - "traefik.http.routers.grafana-secure.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy-network"
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./portainer/data:/data 
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=http"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.tfg-ull.cloud`)"
+      - "traefik.http.middlewares.portainer-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.portainer.middlewares=portainer-https-redirect"
+      - "traefik.http.routers.portainer-secure.entrypoints=https"
+      - "traefik.http.routers.portainer-secure.rule=Host(`portainer.tfg-ull.cloud`)"
+      - "traefik.http.routers.portainer-secure.tls=true"
+      - "traefik.http.routers.portainer-secure.service=portainer"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy-network"
+
+networks:
+  iot-network:
+  proxy-network:
+    external: true
