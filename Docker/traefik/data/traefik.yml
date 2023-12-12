@@ -22,7 +22,7 @@ providers:
 certificatesResolvers:
   cloudflare:
     acme:
-      email: alu0101267760@ull.edu.es
+      email: email
       storage: acme.json
       dnsChallenge:
         provider: cloudflare
